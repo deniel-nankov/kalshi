@@ -1,0 +1,22 @@
+
+===========================
+               Pass-through
+---------------------------
+const          0.0000***   
+               (0.0000)    
+rbob_up        1.0000***   
+               (0.0000)    
+rbob_down      1.0000***   
+               (0.0000)    
+invent_change  -0.0000***  
+               (0.0000)    
+util_change    0.0000***   
+               (0.0000)    
+margin_change  1.0000***   
+               (0.0000)    
+R-squared      1.0000      
+R-squared Adj. 1.0000      
+===========================
+Standard errors in
+parentheses.
+* p<.1, ** p<.05, ***p<.01

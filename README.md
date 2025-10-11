@@ -21,6 +21,7 @@ This repository contains a comprehensive research architecture for forecasting U
 2. **Inventory Surprise Model** - Two-stage residual model, +3-5% R²
 3. **Futures Curve Model** - Market consensus, R² ≈ 0.70
 4. **Regime-Weighted Ensemble** - Final forecast, R² ≈ 0.82
+5. **Quantile Regression Bands** - P10/P50/P90 forecasts evaluated with pinball loss
 
 ### Sophistication Enhancements
 - 🎯 **Asymmetric Pass-Through**: Tests "rockets & feathers" hypothesis
@@ -51,6 +52,9 @@ kalshi/
 - pandas
 - numpy
 - matplotlib
+- shap
+- yellowbrick
+- graphviz (Python package) + Graphviz system binary (e.g., `brew install graphviz`)
 - shap
 - yellowbrick
 
@@ -99,6 +103,7 @@ See `architecture.md` for:
 - Forecast start date analysis (Oct 10 vs Oct 1)
 - Empirical validation results
 - Implementation priorities
+- Quantile regression artefacts (fan charts, pinball metrics under `Gas/outputs/quantile_regression/`)
 
 ## 🔄 Development Status
 

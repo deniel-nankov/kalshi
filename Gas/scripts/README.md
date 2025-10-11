@@ -18,7 +18,10 @@ This directory contains scripts for downloading and processing data for the Octo
 12. **walk_forward_validation.py** - Horizon-by-year walk-forward evaluation & plots
 13. **shap_analysis.py** - Compute SHAP explanations for the Ridge baseline
 14. **model_diagnostics.py** - Yellowbrick regression diagnostics (residuals/prediction error)
-13. **run_pipeline.py** - Orchestrate build → validate → model → reports
+15. **train_quantile_models.py** - Fit quantile regression bands and metrics
+16. **visualize_quantile_regression.py** - Quantile fan chart, pinball loss, residual plots
+17. **visualize_model_graph.py** - Graphviz schematic of the baseline ensemble
+18. **run_pipeline.py** - Orchestrate build → validate → model → reports
 
 ## Setup & Credentials
 
@@ -56,9 +59,12 @@ python report_data_freshness.py         # generates outputs/data_freshness_repor
 # Modeling
 python train_models.py                  # trains baseline models → outputs/models/
 python walk_forward_validation.py       # walk-forward metrics → outputs/walk_forward/
-python run_pipeline.py                  # runs core pipeline end-to-end
 python shap_analysis.py                 # saves SHAP plots → outputs/interpretability/
 python model_diagnostics.py             # saves Yellowbrick diagnostics → outputs/model_diagnostics/
+python train_quantile_models.py         # fits quantile regression → outputs/quantile_regression/
+python visualize_quantile_regression.py # plots quantile fan chart/pinball/residuals
+python visualize_model_graph.py         # renders ensemble flow diagram → outputs/visualizations/
+python run_pipeline.py                  # runs core pipeline end-to-end
 ```
 
 ## Expected Runtime

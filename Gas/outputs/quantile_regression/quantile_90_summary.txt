@@ -1,0 +1,29 @@
+                         QuantReg Regression Results                          
+==============================================================================
+Dep. Variable:           retail_price   Pseudo R-squared:                1.000
+Model:                       QuantReg   Bandwidth:                   2.764e-11
+Method:                 Least Squares   Sparsity:                    1.908e-10
+Date:                Sat, 11 Oct 2025   No. Observations:                 1447
+Time:                        17:52:18   Df Residuals:                     1435
+                                        Df Model:                           11
+=======================================================================================
+                          coef    std err          t      P>|t|      [0.025      0.975]
+---------------------------------------------------------------------------------------
+Intercept            4.926e-09   1.84e-10     26.704      0.000    4.56e-09    5.29e-09
+price_rbob              0.5000   2.07e-11   2.42e+10      0.000       0.500       0.500
+price_wti               0.2500   1.01e-11   2.48e+10      0.000       0.250       0.250
+inventory_mbbl      -1.133e-11    4.8e-13    -23.594      0.000   -1.23e-11   -1.04e-11
+utilization_pct     -5.336e-12   7.72e-13     -6.911      0.000   -6.85e-12   -3.82e-12
+net_imports_kbd     -6.981e-15   1.29e-14     -0.541      0.589   -3.23e-14    1.83e-14
+padd3_share         -4.561e-11   3.14e-12    -14.535      0.000   -5.18e-11   -3.95e-11
+crack_spread            0.2500   1.06e-11   2.35e+10      0.000       0.250       0.250
+retail_margin           1.0000   3.58e-11   2.79e+10      0.000       1.000       1.000
+rbob_lag7               0.2500   1.71e-11   1.46e+10      0.000       0.250       0.250
+rbob_lag14           1.307e-10   2.94e-11      4.442      0.000     7.3e-11    1.88e-10
+delta_rbob_1w           0.2500   2.13e-11   1.17e+10      0.000       0.250       0.250
+winter_blend_effect  1.419e-09   1.44e-10      9.829      0.000    1.14e-09     1.7e-09
+days_since_oct1      1.376e-12   2.95e-13      4.655      0.000    7.96e-13    1.96e-12
+=======================================================================================
+
+The smallest eigenvalue is -3.79e-09. This might indicate that there are
+strong multicollinearity problems or that the design matrix is singular.

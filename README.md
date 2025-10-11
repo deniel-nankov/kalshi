@@ -54,6 +54,15 @@ kalshi/
 - shap
 - yellowbrick
 
+### Environment Setup
+1. Copy the example environment file:
+	```bash
+	cp .env.example .env
+	```
+2. Open `.env` and add your EIA API key (register at https://www.eia.gov/opendata/register.php).
+	- **Never commit your real API key to version control.**
+	- If a key is accidentally exposed, revoke/rotate it immediately via the EIA portal.
+
 ### Installation
 ```bash
 pip install scikit-learn pandas numpy matplotlib

@@ -117,6 +117,11 @@ def walk_forward_forecasts(
 
 
 def plot_walk_forward(predictions_df: pd.DataFrame, output_dir: Path) -> None:
+    if predictions_df.empty or "horizon" not in predictions_df.columns:
+        print("[WARN] No predictions to plot: predictions_df is empty or missing 'horizon' column.")
+        # Optionally, create a placeholder artifact or just return
+        return
+
     for horizon in sorted(predictions_df["horizon"].unique()):
         subset = predictions_df[predictions_df["horizon"] == horizon]
         if subset.empty:

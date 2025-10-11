@@ -51,7 +51,7 @@ def fetch_padd3_share(client: Optional[EIAClient] = None) -> pd.DataFrame:
 
     min_share = df["padd3_share"].min()
     max_share = df["padd3_share"].max()
-    if min_share <= 30 or max_share >= 45:
+    if min_share < 30 or max_share > 45:
         raise EIAClientError("PADD3 share outside expected 30%-45% band.")
     return df
 

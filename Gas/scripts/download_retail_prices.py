@@ -54,7 +54,7 @@ def fetch_retail_prices(client: Optional[EIAClient] = None) -> pd.DataFrame:
 
     min_price = daily["retail_price"].min()
     max_price = daily["retail_price"].max()
-    if min_price <= 1.5 or max_price >= 7.0:
+    if min_price < 1.5 or max_price > 7.0:
         raise EIAClientError("Retail prices outside expected range ($1.50-$7.00).")
     return daily
 

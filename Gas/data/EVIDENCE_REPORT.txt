@@ -1,0 +1,126 @@
+================================================================================
+DATA PIPELINE EVIDENCE REPORT
+================================================================================
+
+Test Date: 2025-10-11 13:29:04
+Test Status: PASSED
+Tests Passed: 52/52
+
+FILE INVENTORY:
+--------------------------------------------------------------------------------
+
+rbob_daily.parquet:
+  rows: 1266
+  columns: ['date', 'price_rbob', 'volume_rbob']
+  date_range: 2020-10-01 00:00:00 to 2025-10-10 00:00:00
+  size_kb: 28.77
+  missing_pct: 0.0
+
+wti_daily.parquet:
+  rows: 1265
+  columns: ['date', 'price_wti']
+  date_range: 2020-10-01 00:00:00 to 2025-10-10 00:00:00
+  size_kb: 20.47
+  missing_pct: 0.0
+
+retail_prices_daily.parquet:
+  rows: 1832
+  columns: ['date', 'retail_price']
+  date_range: 2020-10-05 00:00:00 to 2025-10-10 00:00:00
+  size_kb: 19.54
+  missing_pct: 0.0
+
+eia_inventory_weekly.parquet:
+  rows: 262
+  columns: ['date', 'inventory_mbbl']
+  date_range: 2020-10-02 00:00:00 to 2025-10-03 00:00:00
+  size_kb: 6.01
+  missing_pct: 0.0
+
+eia_utilization_weekly.parquet:
+  rows: 262
+  columns: ['date', 'utilization_pct']
+  date_range: 2020-10-02 00:00:00 to 2025-10-03 00:00:00
+  size_kb: 4.91
+  missing_pct: 0.0
+
+eia_imports_weekly.parquet:
+  rows: 262
+  columns: ['date', 'net_imports_kbd']
+  date_range: 2020-10-02 00:00:00 to 2025-10-03 00:00:00
+  size_kb: 5.36
+  missing_pct: 0.0
+
+padd3_share_weekly.parquet:
+  rows: 262
+  columns: ['date', 'padd3_share']
+  date_range: 2020-10-02 00:00:00 to 2025-10-03 00:00:00
+  size_kb: 6.4
+  missing_pct: 0.0
+
+================================================================================
+ML READINESS METRICS:
+--------------------------------------------------------------------------------
+  total_observations: 1264
+  complete_observations: 1261
+  october_observations: 115
+  years_covered: 6
+  rbob_retail_correlation: 0.85
+
+================================================================================
+TEST RESULTS:
+--------------------------------------------------------------------------------
+[PASS] File: rbob_daily.parquet: Exists (28.8 KB)
+[PASS] File: wti_daily.parquet: Exists (20.5 KB)
+[PASS] File: retail_prices_daily.parquet: Exists (19.5 KB)
+[PASS] File: eia_inventory_weekly.parquet: Exists (6.0 KB)
+[PASS] File: eia_utilization_weekly.parquet: Exists (4.9 KB)
+[PASS] File: eia_imports_weekly.parquet: Exists (5.4 KB)
+[PASS] File: padd3_share_weekly.parquet: Exists (6.4 KB)
+[PASS] RBOB Schema: All required columns present: ['date', 'price_rbob', 'volume_rbob']
+[PASS] RBOB Date Type: Datetime format correct
+[PASS] RBOB Price Type: Numeric format correct
+[PASS] WTI Schema: All required columns present
+[PASS] Retail Schema: All required columns present
+[PASS] Inventory Schema: All required columns present
+[PASS] RBOB Start Date: 2020-10-01 (sufficient)
+[PASS] RBOB End Date: 2025-10-10 (sufficient)
+[PASS] RBOB Date Span: 1835 days (5.0 years)
+[PASS] WTI Start Date: 2020-10-01 (sufficient)
+[PASS] WTI End Date: 2025-10-10 (sufficient)
+[PASS] WTI Date Span: 1835 days (5.0 years)
+[PASS] Retail Start Date: 2020-10-05 (sufficient)
+[PASS] Retail End Date: 2025-10-10 (sufficient)
+[PASS] Retail Date Span: 1831 days (5.0 years)
+[PASS] Inventory Start Date: 2020-10-02 (sufficient)
+[PASS] Inventory End Date: 2025-10-03 (sufficient)
+[PASS] Inventory Date Span: 1827 days (5.0 years)
+[PASS] Utilization Start Date: 2020-10-02 (sufficient)
+[PASS] Utilization End Date: 2025-10-03 (sufficient)
+[PASS] Utilization Date Span: 1827 days (5.0 years)
+[PASS] RBOB Missing Values: No missing values
+[PASS] RBOB Price Range: $1.05 - $4.28 (valid)
+[PASS] RBOB Duplicates: No duplicate dates
+[PASS] WTI Price Range: $35.79 - $123.70 (valid)
+[PASS] Retail Price Range: $2.10 - $5.01 (valid)
+[PASS] Inventory Range: 205.7 - 257.1 million bbls (valid)
+[PASS] Utilization Range: 56.0% - 96.9% (valid)
+[PASS] RBOB Volume: 1,266 rows (sufficient for ML)
+[PASS] WTI Volume: 1,265 rows (sufficient for ML)
+[PASS] Retail Volume: 1,832 rows (sufficient for ML)
+[PASS] Inventory Volume: 262 rows (sufficient for ML)
+[PASS] Utilization Volume: 262 rows (sufficient for ML)
+[PASS] Imports Volume: 262 rows (sufficient for ML)
+[PASS] PADD3 Volume: 262 rows (sufficient for ML)
+[PASS] Lag Features: Can create lags (3, 7, 14 days) - 1,259 valid obs
+[WARN] Crack Spread: Unusual mean: $-72.82
+[PASS] Retail Margin: Can calculate (mean: $0.98)
+[PASS] Volatility Feature: Can calculate 10-day rolling vol - 1,257 valid obs
+[PASS] Momentum Feature: Can calculate 7-day momentum - 1,259 valid obs
+[WARN] Daily Data Join: 68.9% overlap (low)
+[PASS] Weekly→Daily Fill: 99.9% coverage after forward-fill
+[PASS] October Data: 163 October rows across 6 years
+[PASS] Feature Matrix Size: 1,250 complete observations
+[PASS] Feature Variance: All features have sufficient variance
+[PASS] Feature-Target Correlation: 4 features with |r| > 0.5
+[PASS] October Training Data: 101 October observations for training

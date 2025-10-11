@@ -16,13 +16,22 @@ Usage:
 Expected runtime: 5-10 minutes
 """
 
-import pandas as pd
-import numpy as np
 import os
 import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 import warnings
+
+import numpy as np
+import pandas as pd
 warnings.filterwarnings('ignore')
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+SILVER_DIR = SCRIPT_DIR.parent / "data" / "silver"
+GOLD_DIR = SCRIPT_DIR.parent / "data" / "gold"
+SILVER_DIR_STR = str(SILVER_DIR)
+GOLD_DIR_STR = str(GOLD_DIR)
+EVIDENCE_PATH = SCRIPT_DIR.parent / "data" / "EVIDENCE_REPORT.txt"
 
 class Colors:
     """Terminal colors for output"""
@@ -93,7 +102,7 @@ def test_file_existence(result):
     """Test 1: Verify all required files exist"""
     print_header("TEST 1: FILE EXISTENCE")
     
-    silver_dir = '../data/silver'
+    silver_dir = SILVER_DIR
     required_files = [
         'rbob_daily.parquet',
         'wti_daily.parquet',
@@ -104,14 +113,14 @@ def test_file_existence(result):
         'padd3_share_weekly.parquet'
     ]
     
-    if not os.path.exists(silver_dir):
+    if not silver_dir.exists():
         result.add_fail("Directory Check", f"Silver directory does not exist: {silver_dir}")
         return
-    
+
     for file in required_files:
-        filepath = os.path.join(silver_dir, file)
-        if os.path.exists(filepath):
-            size_kb = os.path.getsize(filepath) / 1024
+        filepath = silver_dir / file
+        if filepath.exists():
+            size_kb = filepath.stat().st_size / 1024
             result.add_pass(f"File: {file}", f"Exists ({size_kb:.1f} KB)")
         else:
             result.add_fail(f"File: {file}", "Missing")
@@ -120,11 +129,11 @@ def test_data_structure(result):
     """Test 2: Verify data structure and schema"""
     print_header("TEST 2: DATA STRUCTURE & SCHEMA")
     
-    silver_dir = '../data/silver'
+    silver_dir = SILVER_DIR
     
     # Test RBOB data
     try:
-        df = pd.read_parquet(f'{silver_dir}/rbob_daily.parquet')
+        df = pd.read_parquet(silver_dir / 'rbob_daily.parquet')
         
         # Check required columns
         required_cols = ['date', 'price_rbob']
@@ -149,7 +158,7 @@ def test_data_structure(result):
     
     # Test WTI data
     try:
-        df = pd.read_parquet(f'{silver_dir}/wti_daily.parquet')
+        df = pd.read_parquet(silver_dir / 'wti_daily.parquet')
         required_cols = ['date', 'price_wti']
         if all(col in df.columns for col in required_cols):
             result.add_pass("WTI Schema", f"All required columns present")
@@ -160,7 +169,7 @@ def test_data_structure(result):
     
     # Test Retail data
     try:
-        df = pd.read_parquet(f'{silver_dir}/retail_prices_daily.parquet')
+        df = pd.read_parquet(silver_dir / 'retail_prices_daily.parquet')
         required_cols = ['date', 'retail_price']
         if all(col in df.columns for col in required_cols):
             result.add_pass("Retail Schema", f"All required columns present")
@@ -171,7 +180,7 @@ def test_data_structure(result):
     
     # Test EIA inventory
     try:
-        df = pd.read_parquet(f'{silver_dir}/eia_inventory_weekly.parquet')
+        df = pd.read_parquet(silver_dir / 'eia_inventory_weekly.parquet')
         required_cols = ['date', 'inventory_mbbl']
         if all(col in df.columns for col in required_cols):
             result.add_pass("Inventory Schema", f"All required columns present")
@@ -184,7 +193,7 @@ def test_date_coverage(result):
     """Test 3: Verify date coverage and range"""
     print_header("TEST 3: DATE COVERAGE")
     
-    silver_dir = '../data/silver'
+    silver_dir = SILVER_DIR_STR
     min_required_date = pd.Timestamp('2020-10-01')
     max_required_date = pd.Timestamp('2024-10-01')
     
@@ -228,7 +237,7 @@ def test_data_quality(result):
     """Test 4: Data quality checks"""
     print_header("TEST 4: DATA QUALITY")
     
-    silver_dir = '../data/silver'
+    silver_dir = SILVER_DIR_STR
     
     # Test RBOB prices
     try:
@@ -313,7 +322,7 @@ def test_data_volume(result):
     """Test 5: Verify sufficient data volume for ML"""
     print_header("TEST 5: DATA VOLUME (ML READINESS)")
     
-    silver_dir = '../data/silver'
+    silver_dir = SILVER_DIR_STR
     
     # Daily data should have ~1000+ observations
     daily_files = [
@@ -356,7 +365,7 @@ def test_feature_calculation_readiness(result):
     """Test 6: Verify data can be used for feature engineering"""
     print_header("TEST 6: FEATURE ENGINEERING READINESS")
     
-    silver_dir = '../data/silver'
+    silver_dir = SILVER_DIR_STR
     
     try:
         # Load data
@@ -423,7 +432,7 @@ def test_gold_layer_readiness(result):
     """Test 7: Verify data can be joined for Gold layer"""
     print_header("TEST 7: GOLD LAYER JOIN READINESS")
     
-    silver_dir = '../data/silver'
+    silver_dir = SILVER_DIR_STR
     
     try:
         # Load all datasets
@@ -480,7 +489,7 @@ def test_model_input_readiness(result):
     """Test 8: Final check for ML model input"""
     print_header("TEST 8: ML MODEL INPUT VALIDATION")
     
-    silver_dir = '../data/silver'
+    silver_dir = SILVER_DIR_STR
     
     try:
         # Simulate creating a feature matrix
@@ -544,7 +553,7 @@ def generate_evidence_report(result):
     """Generate detailed evidence report"""
     print_header("EVIDENCE REPORT")
     
-    silver_dir = '../data/silver'
+    silver_dir = SILVER_DIR_STR
     
     evidence = {
         'test_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -600,7 +609,7 @@ def generate_evidence_report(result):
     print(f"  Years of data: {evidence['ml_readiness']['years_covered']}")
     
     # Save evidence report
-    evidence_file = '../data/EVIDENCE_REPORT.txt'
+    evidence_file = str(EVIDENCE_PATH)
     with open(evidence_file, 'w') as f:
         f.write("=" * 80 + "\n")
         f.write("DATA PIPELINE EVIDENCE REPORT\n")

@@ -12,14 +12,18 @@ Run this after completing all downloads to ensure data quality
 before building the Gold layer.
 """
 
+from pathlib import Path
+
 import pandas as pd
-import os
+
+
+SILVER_DIR = Path(__file__).resolve().parents[1] / "data" / "silver"
 
 def validate_silver_layer():
     """Validate all Silver layer files"""
     
-    silver_dir = '../data/silver'
-    
+    silver_dir = SILVER_DIR
+
     required_files = [
         'rbob_daily.parquet',
         'wti_daily.parquet',
@@ -49,13 +53,13 @@ def validate_silver_layer():
     print("-" * 70)
     
     for file in required_files:
-        filepath = os.path.join(silver_dir, file)
-        
-        if not os.path.exists(filepath):
+        filepath = silver_dir / file
+
+        if not filepath.exists():
             print(f"❌ MISSING: {file}")
             all_valid = False
             continue
-        
+
         df = pd.read_parquet(filepath)
         files_found += 1
         total_rows += len(df)
@@ -132,8 +136,8 @@ def validate_silver_layer():
             max_share = df['padd3_share'].max()
             print(f"  PADD3 share range: {min_share:.1f}% - {max_share:.1f}%")
             
-            if min_share < 40 or max_share > 60:
-                print(f"  ⚠️  PADD3 share outside expected range (40-60%)")
+            if min_share < 30 or max_share > 45:
+                print(f"  ⚠️  PADD3 share outside expected range (30-45%)")
     
     # Check optional files
     print("\n\n" + "=" * 70)
@@ -141,9 +145,9 @@ def validate_silver_layer():
     print("-" * 70)
     
     for file in optional_files:
-        filepath = os.path.join(silver_dir, file)
-        
-        if not os.path.exists(filepath):
+        filepath = silver_dir / file
+
+        if not filepath.exists():
             print(f"○ Not present: {file} (OK - optional)")
         else:
             print(f"✓ Present: {file}")

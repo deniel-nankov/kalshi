@@ -51,10 +51,13 @@ kalshi/
 - pandas
 - numpy
 - matplotlib
+- shap
+- yellowbrick
 
 ### Installation
 ```bash
 pip install scikit-learn pandas numpy matplotlib
+pip install shap yellowbrick plotly bokeh
 ```
 
 ### Training Time

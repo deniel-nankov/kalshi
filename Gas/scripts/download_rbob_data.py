@@ -16,9 +16,12 @@ Time: ~15 minutes
 Cost: FREE
 """
 
-import yfinance as yf
+from pathlib import Path
+
 import pandas as pd
-import os
+import yfinance as yf
+
+SILVER_DIR = Path(__file__).resolve().parents[1] / "data" / "silver"
 
 def download_rbob_futures():
     """Download daily RBOB gasoline futures from Yahoo Finance"""
@@ -46,6 +49,7 @@ def download_rbob_futures():
     
     # Keep only needed columns
     df = df[['date', 'price_rbob', 'volume_rbob']]
+    df['date'] = pd.to_datetime(df['date']).dt.tz_localize(None)
     
     # Convert to $/gallon (Yahoo gives $/gallon already for RB=F)
     # Sanity checks
@@ -54,7 +58,8 @@ def download_rbob_futures():
     assert len(df) > 1000, f"Too few observations: {len(df)} (expected >1000)"
     
     # Save
-    output_path = '../data/silver/rbob_daily.parquet'
+    SILVER_DIR.mkdir(parents=True, exist_ok=True)
+    output_path = SILVER_DIR / 'rbob_daily.parquet'
     df.to_parquet(output_path, index=False)
     
     print(f"✓ Downloaded {len(df)} days of RBOB data")
@@ -83,13 +88,14 @@ def download_wti_futures():
     })
     
     df = df[['date', 'price_wti']]
+    df['date'] = pd.to_datetime(df['date']).dt.tz_localize(None)
     
     # Sanity checks
     assert df['price_wti'].min() > 10, f"WTI price too low: ${df['price_wti'].min():.2f}"
     assert df['price_wti'].max() < 200, f"WTI price too high: ${df['price_wti'].max():.2f}"
     assert len(df) > 1000, f"Too few observations: {len(df)}"
     
-    output_path = '../data/silver/wti_daily.parquet'
+    output_path = SILVER_DIR / 'wti_daily.parquet'
     df.to_parquet(output_path, index=False)
     
     print(f"✓ Downloaded {len(df)} days of WTI data")
@@ -106,8 +112,8 @@ def main():
     print()
     
     # Check if output directory exists
-    os.makedirs('../data/silver', exist_ok=True)
-    
+    SILVER_DIR.mkdir(parents=True, exist_ok=True)
+
     # Download both datasets
     rbob_df = download_rbob_futures()
     wti_df = download_wti_futures()

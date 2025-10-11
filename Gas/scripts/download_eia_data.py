@@ -1,134 +1,113 @@
 """
-Download EIA weekly petroleum data
-Requires: EIA API key (get free at https://www.eia.gov/opendata/register.php)
+Download EIA weekly petroleum data.
 """
 
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Optional
+
 import pandas as pd
-import requests
-import os
 
-# TODO: Set your EIA API key
-# Get from: https://www.eia.gov/opendata/register.php
-API_KEY = os.getenv("EIA_API_KEY", "YOUR_API_KEY_HERE")
+from eia_client import EIAClient, EIAClientError, default_params
 
-def download_eia_inventory():
-    """Download weekly gasoline inventory data"""
-    print("Downloading EIA inventory data...")
-    
-    # Series ID for Total Motor Gasoline Stocks (Thousand Barrels)
-    series_id = "PET.WGTSTUS1.W"
-    
-    url = f"https://api.eia.gov/v2/petroleum/stoc/wstk/data/?api_key={API_KEY}&data[0]=value&facets[series][]={series_id}&frequency=weekly&start=2020-10-01"
-    
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        
-        # Parse into dataframe
-        df = pd.DataFrame(data['response']['data'])
-        df['date'] = pd.to_datetime(df['period'])
-        df['inventory_mbbl'] = df['value'].astype(float) / 1000  # Convert to millions
-        df = df[['date', 'inventory_mbbl']].sort_values('date')
-        
-        # Sanity check
-        assert df['inventory_mbbl'].min() > 180, "Inventory too low (data error?)"
-        assert df['inventory_mbbl'].max() < 350, "Inventory too high (data error?)"
-        
-        # Save to silver
-        os.makedirs('../data/silver', exist_ok=True)
-        df.to_parquet('../data/silver/eia_inventory_weekly.parquet', index=False)
-        print(f"✓ Downloaded {len(df)} weeks of inventory data")
-        return df
-        
-    except Exception as e:
-        print(f"✗ Error downloading inventory: {e}")
-        return None
+SILVER_DIR = Path(__file__).resolve().parents[1] / "data" / "silver"
 
 
-def download_eia_utilization():
-    """Download weekly refinery utilization rate"""
-    print("Downloading EIA utilization data...")
-    
-    series_id = "PET.WPULEUS3.W"  # Percent Utilization of Refinery Operable Capacity
-    
-    url = f"https://api.eia.gov/v2/petroleum/pnp/wiup/data/?api_key={API_KEY}&data[0]=value&facets[series][]={series_id}&frequency=weekly&start=2020-10-01"
-    
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        
-        df = pd.DataFrame(data['response']['data'])
-        df['date'] = pd.to_datetime(df['period'])
-        df['utilization_pct'] = df['value'].astype(float)
-        df = df[['date', 'utilization_pct']].sort_values('date')
-        
-        # Sanity check
-        assert df['utilization_pct'].min() > 50, "Utilization too low"
-        assert df['utilization_pct'].max() < 100, "Utilization over 100%"
-        
-        df.to_parquet('../data/silver/eia_utilization_weekly.parquet', index=False)
-        print(f"✓ Downloaded {len(df)} weeks of utilization data")
-        return df
-        
-    except Exception as e:
-        print(f"✗ Error downloading utilization: {e}")
-        return None
+def _save(df: pd.DataFrame, filename: str) -> Path:
+    SILVER_DIR.mkdir(parents=True, exist_ok=True)
+    path = SILVER_DIR / filename
+    df.to_parquet(path, index=False)
+    return path
 
 
-def download_eia_imports():
-    """Download weekly imports minus exports"""
-    print("Downloading EIA imports/exports data...")
-    
-    # Net imports = Imports - Exports
-    imports_series = "PET.WGTIMUS2.W"
-    exports_series = "PET.WGTEXUS2.W"
-    
-    try:
-        # Download imports
-        url_imports = f"https://api.eia.gov/v2/petroleum/move/wkly/data/?api_key={API_KEY}&data[0]=value&facets[series][]={imports_series}&frequency=weekly&start=2020-10-01"
-        imports_data = requests.get(url_imports).json()
-        df_imports = pd.DataFrame(imports_data['response']['data'])
-        
-        # Download exports
-        url_exports = f"https://api.eia.gov/v2/petroleum/move/wkly/data/?api_key={API_KEY}&data[0]=value&facets[series][]={exports_series}&frequency=weekly&start=2020-10-01"
-        exports_data = requests.get(url_exports).json()
-        df_exports = pd.DataFrame(exports_data['response']['data'])
-        
-        # Merge and calculate net imports
-        df_imports['date'] = pd.to_datetime(df_imports['period'])
-        df_imports['imports'] = df_imports['value'].astype(float)
-        df_exports['date'] = pd.to_datetime(df_exports['period'])
-        df_exports['exports'] = df_exports['value'].astype(float)
-        
-        df = df_imports[['date', 'imports']].merge(df_exports[['date', 'exports']], on='date')
-        df['net_imports_kbd'] = df['imports'] - df['exports']  # Thousand barrels per day
-        df = df[['date', 'net_imports_kbd']].sort_values('date')
-        
-        df.to_parquet('../data/silver/eia_imports_weekly.parquet', index=False)
-        print(f"✓ Downloaded {len(df)} weeks of import/export data")
-        return df
-        
-    except Exception as e:
-        print(f"✗ Error downloading imports: {e}")
-        return None
+def fetch_inventory(client: Optional[EIAClient] = None) -> pd.DataFrame:
+    client = client or EIAClient()
+    params = default_params("WGTSTUS1", frequency="weekly", start="2020-10-01")
+    df = client.fetch("petroleum/stoc/wstk/data", params)
+    if df.empty:
+        raise EIAClientError("Fetched inventory data is empty. No data returned from EIA API.")
+    df = df.assign(
+        date=pd.to_datetime(df["period"]),
+        inventory_mbbl=df["value"].astype(float) / 1000.0,
+    )[["date", "inventory_mbbl"]].sort_values("date")
+
+    if df["inventory_mbbl"].min() <= 180 or df["inventory_mbbl"].max() >= 350:
+        raise EIAClientError("Inventory values outside expected range (180-350 million barrels).")
+    return df
 
 
-if __name__ == "__main__":
+def fetch_utilization(client: Optional[EIAClient] = None) -> pd.DataFrame:
+    client = client or EIAClient()
+    params = default_params("WPULEUS3", frequency="weekly", start="2020-10-01")
+    df = client.fetch("petroleum/pnp/wiup/data", params)
+    if df.empty:
+        raise EIAClientError("Fetched utilization data is empty. No data returned from EIA API.")
+    df = df.assign(
+        date=pd.to_datetime(df["period"]),
+        utilization_pct=df["value"].astype(float),
+    )[["date", "utilization_pct"]].sort_values("date")
+
+    if df["utilization_pct"].min() <= 50 or df["utilization_pct"].max() >= 100:
+        raise EIAClientError("Utilization percentage outside expected range (50-100%).")
+    return df
+
+
+def fetch_net_imports(client: Optional[EIAClient] = None) -> pd.DataFrame:
+    client = client or EIAClient()
+    imports_params = default_params("WGTIMUS2", frequency="weekly", start="2020-10-01")
+    exports_params = default_params("W_EPM0F_EEX_NUS-Z00_MBBLD", frequency="weekly", start="2020-10-01")
+
+    imports_df = client.fetch("petroleum/move/wkly/data", imports_params)
+    exports_df = client.fetch("petroleum/move/wkly/data", exports_params)
+    if imports_df.empty:
+        raise EIAClientError("Fetched imports data is empty. No data returned from EIA API.")
+    if exports_df.empty:
+        raise EIAClientError("Fetched exports data is empty. No data returned from EIA API.")
+
+    imports = imports_df.assign(
+        date=pd.to_datetime(imports_df["period"]), imports=imports_df["value"].astype(float)
+    )[["date", "imports"]]
+    exports = exports_df.assign(
+        date=pd.to_datetime(exports_df["period"]), exports=exports_df["value"].astype(float)
+    )[["date", "exports"]]
+
+    df = (
+        imports.merge(exports, on="date", how="inner")
+        .assign(net_imports_kbd=lambda x: x["imports"] - x["exports"])
+        [["date", "net_imports_kbd"]]
+        .sort_values("date")
+    )
+    if df.empty:
+        raise EIAClientError("Merged net imports DataFrame is empty. No overlapping dates between imports and exports.")
+    return df
+
+
+def main() -> None:
     print("=" * 60)
     print("EIA DATA DOWNLOAD")
     print("=" * 60)
-    
-    if API_KEY == "YOUR_API_KEY_HERE":
-        print("\n⚠️  WARNING: EIA_API_KEY not set!")
-        print("Get a free API key at: https://www.eia.gov/opendata/register.php")
-        print("Then set it: export EIA_API_KEY='your_key_here'")
-        exit(1)
-    
-    download_eia_inventory()
-    download_eia_utilization()
-    download_eia_imports()
-    
+
+    try:
+        inventory_df = fetch_inventory()
+        inv_path = _save(inventory_df, "eia_inventory_weekly.parquet")
+        print(f"✓ Inventory data saved to {inv_path}")
+
+        util_df = fetch_utilization()
+        util_path = _save(util_df, "eia_utilization_weekly.parquet")
+        print(f"✓ Utilization data saved to {util_path}")
+
+        imports_df = fetch_net_imports()
+        imports_path = _save(imports_df, "eia_imports_weekly.parquet")
+        print(f"✓ Net imports data saved to {imports_path}")
+
+    except EIAClientError as err:
+        print(f"✗ EIA download failed: {err}")
+        return
+
     print("\n✅ EIA data download complete!")
-    print("Files saved to: ../data/silver/")
+    print(f"Files saved in: {SILVER_DIR}")
+
+
+if __name__ == "__main__":
+    main()

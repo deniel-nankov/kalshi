@@ -54,6 +54,10 @@ kalshi/
 - matplotlib
 - shap
 - yellowbrick
+- statsmodels
+- graphviz (Python package) + Graphviz system binary (e.g., `brew install graphviz`)
+- shap
+- yellowbrick
 - graphviz (Python package) + Graphviz system binary (e.g., `brew install graphviz`)
 - shap
 - yellowbrick
@@ -104,6 +108,7 @@ See `architecture.md` for:
 - Empirical validation results
 - Implementation priorities
 - Quantile regression artefacts (fan charts, pinball metrics under `Gas/outputs/quantile_regression/`)
+- Bayesian update summaries (`Gas/outputs/bayesian_updates/`) and asymmetric pass-through analysis (`Gas/outputs/asym_pass_through/`)
 
 ## 🔄 Development Status
 

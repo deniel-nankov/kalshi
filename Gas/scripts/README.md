@@ -21,7 +21,11 @@ This directory contains scripts for downloading and processing data for the Octo
 15. **train_quantile_models.py** - Fit quantile regression bands and metrics
 16. **visualize_quantile_regression.py** - Quantile fan chart, pinball loss, residual plots
 17. **visualize_model_graph.py** - Graphviz schematic of the baseline ensemble
-18. **run_pipeline.py** - Orchestrate build → validate → model → reports
+18. **asym_pass_through_analysis.py** - Behavioral pricing regression (up/down wholesale shocks)
+19. **visualize_asym_pass_through.py** - Scatter/heatmap/bar plots for pass-through asymmetry
+20. **bayesian_update.py** - Bayesian forecast updates (Oct10/16/23/30)
+21. **final_month_forecast.py** - Point + quantile forecast for Oct 31, 2025
+22. **run_pipeline.py** - Orchestrate build → validate → model → reports
 
 ## Setup & Credentials
 
@@ -64,6 +68,10 @@ python model_diagnostics.py             # saves Yellowbrick diagnostics → outp
 python train_quantile_models.py         # fits quantile regression → outputs/quantile_regression/
 python visualize_quantile_regression.py # plots quantile fan chart/pinball/residuals
 python visualize_model_graph.py         # renders ensemble flow diagram → outputs/visualizations/
+python asym_pass_through_analysis.py    # asymmetric pass-through regression → outputs/asym_pass_through/
+python visualize_asym_pass_through.py   # plots behavioural pricing visuals → outputs/asym_pass_through/
+python bayesian_update.py               # Bayesian forecast updates (default Oct 10/16/23/30)
+python final_month_forecast.py          # deterministic + quantile forecast for Oct 31, 2025
 python run_pipeline.py                  # runs core pipeline end-to-end
 ```
 

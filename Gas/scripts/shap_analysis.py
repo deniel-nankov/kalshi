@@ -10,10 +10,10 @@ Outputs (default): Gas/outputs/interpretability/shap_*.png
 from __future__ import annotations
 
 import argparse
+import pickle
 import sys
 from pathlib import Path
 
-import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 try:
@@ -41,8 +41,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model-path",
         type=Path,
-        default=Path(__file__).resolve().parents[1] / "outputs" / "models" / "ridge_baseline_model.joblib",
-        help="Path to trained ridge model pipeline.",
+        default=Path(__file__).resolve().parents[1] / "outputs" / "models" / "ridge_model.pkl",
+        help="Path to trained ridge model.",
     )
     parser.add_argument(
         "--output-dir",
@@ -74,10 +74,12 @@ def main() -> None:
 
     if not args.model_path.exists():
         raise FileNotFoundError(f"Model file not found: {args.model_path}")
-    pipeline = joblib.load(args.model_path)
+    
+    with open(args.model_path, 'rb') as f:
+        model = pickle.load(f)
 
     print(f"Creating SHAP explainer on {sample_n:,} samples …")
-    explainer = shap.Explainer(pipeline.predict, X_sample, algorithm="auto")
+    explainer = shap.Explainer(model.predict, X_sample, algorithm="auto")
     shap_values = explainer(X_sample)
 
     print("Saving SHAP plots …")

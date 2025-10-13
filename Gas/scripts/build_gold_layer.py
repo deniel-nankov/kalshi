@@ -16,28 +16,56 @@ Expected inputs (Silver layer):
     - hurricane_risk_october.csv             (optional)
 
 Outputs (Gold layer):
-    - master_daily.parquet       # Daily panel with engineered features
+    - master_daily.parquet       # Daily panel with engineered features (21+ features)
     - master_october.parquet     # Filtered October observations (2020 onward)
+    - master_model_ready.parquet # Complete cases for training
 
-The feature engineering mirrors the architecture blueprint:
-    * Align daily and weekly series on a common calendar
-    * Forward-fill weekly fundamentals
-    * Create pass-through lags, spreads, and seasonal markers
+Feature Engineering (18+ features):
+    Price & Market:
+        - price_rbob, price_wti, retail_price
+        - rbob_lag3, rbob_lag7, rbob_lag14
+        - crack_spread, retail_margin
+        - delta_rbob_1w, rbob_return_1d, vol_rbob_10d
+        - rbob_momentum_7d (NEW: percentage momentum)
+    
+    Supply & Refining:
+        - inventory_mbbl, utilization_pct, net_imports_kbd
+        - days_supply (NEW: normalized inventory)
+        - util_inv_interaction (NEW: compound stress)
+        - padd3_share (optional)
+    
+    Seasonal & Timing:
+        - winter_blend_effect, days_since_oct1
+        - weekday, is_weekend
+        - temperature anomalies (optional)
 """
 
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import pandas as pd
 
-
+# Add src directory to path for feature modules
 REPO_ROOT = Path(__file__).resolve().parents[1]
+SRC_DIR = REPO_ROOT / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
 SILVER_DIR = REPO_ROOT / "data" / "silver"
 GOLD_DIR = REPO_ROOT / "data" / "gold"
+
+# Import copula feature (will be optional if module doesn't exist)
+try:
+    from features.copula_supply_stress import compute_copula_stress, validate_copula_feature
+    COPULA_AVAILABLE = True
+except ImportError:
+    COPULA_AVAILABLE = False
+    print("⚪ Copula feature module not available (optional)")
 
 
 def _load_parquet(filename: str, *, required: bool = True) -> Optional[pd.DataFrame]:
@@ -132,15 +160,64 @@ def build_gold_dataset() -> pd.DataFrame:
     gold[["price_rbob", "volume_rbob"]] = gold[["price_rbob", "volume_rbob"]].ffill()
     gold["price_wti"] = gold["price_wti"].ffill()
 
+    # === PRICE & MARKET STRUCTURE FEATURES ===
     gold["crack_spread"] = gold["price_rbob"] - gold["price_wti"]
     gold["retail_margin"] = gold["retail_price"] - gold["price_rbob"]
+    
+    # Lagged retail margin (SAFE - uses past values only, no leakage)
+    gold["retail_margin_lag7"] = gold["retail_margin"].shift(7)
+    gold["retail_margin_lag14"] = gold["retail_margin"].shift(14)
+    
     gold["rbob_lag3"] = gold["price_rbob"].shift(3)
     gold["rbob_lag7"] = gold["price_rbob"].shift(7)
     gold["rbob_lag14"] = gold["price_rbob"].shift(14)
     gold["delta_rbob_1w"] = gold["price_rbob"] - gold["price_rbob"].shift(7)
     gold["rbob_return_1d"] = gold["price_rbob"].pct_change()
     gold["vol_rbob_10d"] = gold["rbob_return_1d"].rolling(10).std()
+    
+    # NEW: RBOB Momentum (percentage change over 7 days)
+    # Captures velocity of price changes, not just position
+    gold["rbob_momentum_7d"] = (gold["price_rbob"] - gold["rbob_lag7"]) / gold["rbob_lag7"]
 
+    # === SUPPLY & REFINING BALANCE FEATURES ===
+    # NEW: Days Supply (normalized inventory relative to daily consumption)
+    # US average gasoline consumption is approximately 8.5 million barrels/day
+    DAILY_CONSUMPTION_MBBL = 8.5  # million barrels per day (US average)
+    if "inventory_mbbl" in gold.columns:
+        gold["days_supply"] = gold["inventory_mbbl"] / DAILY_CONSUMPTION_MBBL
+    
+    # NEW: Utilization × Inventory Interaction (compound stress indicator)
+    # High utilization + low inventory = severe supply constraint
+    if "utilization_pct" in gold.columns and "days_supply" in gold.columns:
+        gold["util_inv_interaction"] = gold["utilization_pct"] * gold["days_supply"]
+    
+    # NEW: Copula Supply Stress (joint tail risk modeling)
+    # Captures non-linear dependencies: low inventory + high utilization + hurricane risk
+    # Academic foundation: Patton (2006), Cherubini et al. (2004)
+    if COPULA_AVAILABLE and "days_supply" in gold.columns and "utilization_pct" in gold.columns:
+        print("\n🎯 Computing copula supply stress feature...")
+        try:
+            # Extract October data for historical calibration (more stable estimates)
+            gold_temp = gold.reset_index() if gold.index.name == 'date' else gold.copy()
+            gold_temp['date_col'] = pd.to_datetime(gold_temp['date']) if 'date' in gold_temp.columns else gold.index
+            october_hist = gold_temp[gold_temp['date_col'].dt.month == 10].copy()
+            
+            if len(october_hist) >= 50:  # Need minimum observations for copula
+                # Compute copula stress using historical October data
+                gold["copula_supply_stress"] = compute_copula_stress(
+                    inventory_days=gold["days_supply"],
+                    utilization_pct=gold["utilization_pct"],
+                    hurricane_prob=0.15,  # October average probability
+                    historical_data=october_hist[["days_supply", "utilization_pct"]].dropna()
+                )
+                print("   ✓ Copula stress feature added successfully")
+            else:
+                print(f"   ⚠️  Insufficient October data ({len(october_hist)} obs) - skipping copula")
+        except Exception as e:
+            print(f"   ⚠️  Copula computation failed: {e}")
+            print("   → Proceeding without copula feature")
+
+    # === SEASONAL & TIMING FEATURES ===
     gold["weekday"] = gold.index.dayofweek
     gold["is_weekend"] = gold["weekday"].isin([5, 6]).astype(int)
 
@@ -174,20 +251,43 @@ def save_outputs(gold: pd.DataFrame) -> None:
     print(f"✓ Saved October subset: {master_october_path}")
 
     # Additional model-ready dataset with key features present
-    model_ready = gold.dropna(
-        subset=[
-            "price_rbob",
-            "price_wti",
-            "retail_price",
-            "crack_spread",
-            "retail_margin",
-            "rbob_lag3",
-            "rbob_lag7",
-            "rbob_lag14",
-            "delta_rbob_1w",
-            "vol_rbob_10d",
-        ]
-    ).copy()
+    required_features = [
+        "price_rbob",
+        "price_wti",
+        "retail_price",
+        "crack_spread",
+        "retail_margin",
+        "retail_margin_lag7",   # NEW: lagged retail margin (safe)
+        "retail_margin_lag14",  # NEW: lagged retail margin (safe)
+        "rbob_lag3",
+        "rbob_lag7",
+        "rbob_lag14",
+        "delta_rbob_1w",
+        "vol_rbob_10d",
+        "rbob_momentum_7d",
+    ]
+    
+    # Add optional features if they exist
+    if "days_supply" in gold.columns:
+        required_features.append("days_supply")
+    if "util_inv_interaction" in gold.columns:
+        required_features.append("util_inv_interaction")
+    if "copula_supply_stress" in gold.columns:
+        required_features.append("copula_supply_stress")
+    
+    model_ready = gold.dropna(subset=required_features).copy()
+    
+    # Validate copula feature if present
+    if "copula_supply_stress" in model_ready.columns and COPULA_AVAILABLE:
+        print("\n" + "=" * 80)
+        print("VALIDATING COPULA FEATURE")
+        print("=" * 80)
+        try:
+            from features.copula_supply_stress import validate_copula_feature, print_validation_report
+            metrics = validate_copula_feature(model_ready, target="retail_price")
+            print_validation_report(metrics)
+        except Exception as e:
+            print(f"⚠️  Copula validation failed: {e}")
     model_ready_path = GOLD_DIR / "master_model_ready.parquet"
     model_ready.to_parquet(model_ready_path, index=False)
     print(f"✓ Saved model-ready subset: {model_ready_path}")

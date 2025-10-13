@@ -2,30 +2,50 @@
 
 This directory contains scripts for downloading and processing data for the October 31, 2025 forecast.
 
+## Architecture
+
+This project implements a **medallion architecture** with three data layers:
+- 📦 **Bronze**: Raw API responses (no transformations)
+- 🪙 **Silver**: Cleaned, validated data (standardized columns, types, units)
+- ⭐ **Gold**: Feature-engineered, model-ready datasets
+
+See `../data/MEDALLION_ARCHITECTURE.md` for detailed documentation.
+
 ## Scripts Overview
 
-1. **download_rbob_data.py** - Download NYMEX RBOB futures and WTI crude prices from Yahoo Finance
-2. **download_retail_prices.py** - Download AAA/EIA retail gasoline price series
-3. **download_eia_data.py** - Download EIA weekly inventory, utilization, imports
-4. **download_padd3_data.py** - Derive Gulf Coast (PADD3) supply share feature
-5. **build_gold_layer.py** - Join all Silver data and create the master modeling tables (daily / October / model-ready)
-6. **validate_silver_layer.py** - Sanity checks for Silver layer outputs
-7. **validate_gold_layer.py** - Data quality checks for the Gold layer
-8. **test_all_downloads.py** - End-to-end verification of download + validation pipeline
-9. **visualize_layer_transition.py** - Animated comparison of Silver vs Gold price series
-10. **report_data_freshness.py** - Generates Silver-layer recency dashboard (PNG|GIF)
-11. **train_models.py** - Train baseline models and save artefacts/metrics
-12. **walk_forward_validation.py** - Horizon-by-year walk-forward evaluation & plots
-13. **shap_analysis.py** - Compute SHAP explanations for the Ridge baseline
-14. **model_diagnostics.py** - Yellowbrick regression diagnostics (residuals/prediction error)
-15. **train_quantile_models.py** - Fit quantile regression bands and metrics
-16. **visualize_quantile_regression.py** - Quantile fan chart, pinball loss, residual plots
-17. **visualize_model_graph.py** - Graphviz schematic of the baseline ensemble
-18. **asym_pass_through_analysis.py** - Behavioral pricing regression (up/down wholesale shocks)
-19. **visualize_asym_pass_through.py** - Scatter/heatmap/bar plots for pass-through asymmetry
-20. **bayesian_update.py** - Bayesian forecast updates (Oct10/16/23/30)
-21. **final_month_forecast.py** - Point + quantile forecast for Oct 31, 2025
-22. **run_pipeline.py** - Orchestrate build → validate → model → reports
+### Bronze Layer (Downloads)
+1. **download_rbob_data_bronze.py** - Download raw RBOB/WTI futures to Bronze
+2. **download_retail_prices_bronze.py** - Download raw retail prices to Bronze
+3. **download_eia_data_bronze.py** - Download raw EIA data to Bronze
+
+### Silver Layer (Cleaning)
+4. **clean_rbob_to_silver.py** - Clean RBOB/WTI: Bronze → Silver
+5. **clean_retail_to_silver.py** - Clean retail prices: Bronze → Silver
+6. **clean_eia_to_silver.py** - Clean EIA data: Bronze → Silver
+
+### Gold Layer (Feature Engineering)
+7. **build_gold_layer.py** - Join Silver data and engineer features → Gold
+### Validation & Pipeline
+8. **validate_silver_layer.py** - Sanity checks for Silver layer outputs
+9. **validate_gold_layer.py** - Data quality checks for the Gold layer
+10. **run_medallion_pipeline.py** - **⭐ Run complete pipeline: Bronze → Silver → Gold**
+11. **test_all_downloads.py** - End-to-end verification
+
+### Visualization & Reporting
+12. **visualize_layer_transition.py** - Animated comparison of Silver vs Gold price series
+13. **report_data_freshness.py** - Generates Silver-layer recency dashboard (PNG|GIF)
+### Modeling & Analysis
+14. **train_models.py** - Train baseline models and save artefacts/metrics
+15. **walk_forward_validation.py** - Horizon-by-year walk-forward evaluation & plots
+16. **shap_analysis.py** - Compute SHAP explanations for the Ridge baseline
+17. **model_diagnostics.py** - Yellowbrick regression diagnostics (residuals/prediction error)
+18. **train_quantile_models.py** - Fit quantile regression bands and metrics
+19. **visualize_quantile_regression.py** - Quantile fan chart, pinball loss, residual plots
+20. **visualize_model_graph.py** - Graphviz schematic of the baseline ensemble
+21. **asym_pass_through_analysis.py** - Behavioral pricing regression (up/down wholesale shocks)
+22. **visualize_asym_pass_through.py** - Scatter/heatmap/bar plots for pass-through asymmetry
+23. **bayesian_update.py** - Bayesian forecast updates (Oct10/16/23/30)
+24. **final_month_forecast.py** - Point + quantile forecast for Oct 31, 2025
 
 ## Setup & Credentials
 
@@ -41,20 +61,41 @@ This directory contains scripts for downloading and processing data for the Octo
 
 ## Usage
 
+### Quick Start (Recommended)
 ```bash
-# Silver layer downloads
+# Run complete medallion pipeline: Bronze → Silver → Gold
+python run_medallion_pipeline.py
+```
+
+### Manual Step-by-Step
+
+#### Bronze Layer (Download Raw Data)
+```bash
+python download_rbob_data_bronze.py        # RBOB/WTI futures
+python download_retail_prices_bronze.py    # Retail prices
+python download_eia_data_bronze.py         # EIA data
+```
+
+#### Silver Layer (Clean Data)
+```bash
+python clean_rbob_to_silver.py       # Clean RBOB/WTI
+python clean_retail_to_silver.py     # Clean retail prices
+python clean_eia_to_silver.py        # Clean EIA data
+python validate_silver_layer.py      # Validate
+```
+
+#### Gold Layer (Feature Engineering)
+```bash
+python build_gold_layer.py           # Build features
+python validate_gold_layer.py        # Validate
+```
+
+### Legacy Scripts (Direct to Silver)
+```bash
+# Old approach: downloads directly to Silver (skips Bronze)
 python download_rbob_data.py
 python download_retail_prices.py
 python download_eia_data.py
-python download_padd3_data.py
-
-# Validation + Gold layer
-python validate_silver_layer.py
-python build_gold_layer.py
-python validate_gold_layer.py
-
-# Integration sweep
-python test_all_downloads.py
 
 # Visualization
 python visualize_layer_transition.py  # generates outputs/silver_gold_prices.gif & outputs/silver_gold_fundamentals.gif
@@ -83,13 +124,18 @@ python run_pipeline.py                  # runs core pipeline end-to-end
 
 ## Output
 
+- `data/bronze/` - Raw API responses (immutable)
+  - `*_raw.parquet` files
 - `data/silver/` - Clean single-source files
-- `data/gold/`
+  - `*_daily.parquet`, `*_weekly.parquet`
+- `data/gold/` - Model-ready feature datasets
   - `master_daily.parquet` (forward-filled fusion of all features)
   - `master_october.parquet` (October-only slice for historical analysis)
   - `master_model_ready.parquet` (rows with complete target + lagged features for training)
 
 `build_gold_layer.py` trims the first few days without retail data and forward-fills weekend gaps so the model-ready table contains zero missing values on core features.
+
+See `../data/MEDALLION_ARCHITECTURE.md` for complete layer documentation.
 
 ## Testing
 

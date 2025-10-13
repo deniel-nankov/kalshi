@@ -38,6 +38,7 @@ wheels/
 *.parquet
 *.h5
 *.hdf5
+bronze/
 silver/
 gold/
 raw_data/

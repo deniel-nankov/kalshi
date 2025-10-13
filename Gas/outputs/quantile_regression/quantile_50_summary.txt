@@ -1,29 +1,48 @@
+Quantile 0.5 Regression Summary
+==================================================
+
                          QuantReg Regression Results                          
 ==============================================================================
-Dep. Variable:           retail_price   Pseudo R-squared:                1.000
-Model:                       QuantReg   Bandwidth:                   4.256e-11
-Method:                 Least Squares   Sparsity:                    2.395e-10
-Date:                Sat, 11 Oct 2025   No. Observations:                 1447
-Time:                        17:52:18   Df Residuals:                     1435
-                                        Df Model:                           11
-=======================================================================================
-                          coef    std err          t      P>|t|      [0.025      0.975]
----------------------------------------------------------------------------------------
-Intercept           -5.392e-09   1.88e-10    -28.711      0.000   -5.76e-09   -5.02e-09
-price_rbob              0.5000   2.09e-11    2.4e+10      0.000       0.500       0.500
-price_wti               0.2500   1.01e-11   2.46e+10      0.000       0.250       0.250
-inventory_mbbl       1.162e-11   4.85e-13     23.940      0.000    1.07e-11    1.26e-11
-utilization_pct       7.03e-12   8.79e-13      7.998      0.000    5.31e-12    8.75e-12
-net_imports_kbd      7.571e-15   1.33e-14      0.568      0.570   -1.86e-14    3.37e-14
-padd3_share          6.039e-11   3.02e-12     19.992      0.000    5.45e-11    6.63e-11
-crack_spread            0.2500   1.07e-11   2.33e+10      0.000       0.250       0.250
-retail_margin           1.0000   3.55e-11   2.82e+10      0.000       1.000       1.000
-rbob_lag7               0.2500   1.61e-11   1.55e+10      0.000       0.250       0.250
-rbob_lag14           5.322e-11   2.84e-11      1.875      0.061   -2.47e-12    1.09e-10
-delta_rbob_1w           0.2500   2.09e-11   1.19e+10      0.000       0.250       0.250
-winter_blend_effect -1.346e-09   1.75e-10     -7.685      0.000   -1.69e-09      -1e-09
-days_since_oct1     -1.448e-12    3.1e-13     -4.668      0.000   -2.06e-12    -8.4e-13
-=======================================================================================
+Dep. Variable:           retail_price   Pseudo R-squared:               0.8362
+Model:                       QuantReg   Bandwidth:                     0.03352
+Method:                 Least Squares   Sparsity:                       0.1688
+Date:                Sun, 12 Oct 2025   No. Observations:                 1447
+Time:                        19:23:02   Df Residuals:                     1428
+                                        Df Model:                           18
+========================================================================================
+                           coef    std err          t      P>|t|      [0.025      0.975]
+----------------------------------------------------------------------------------------
+const                    0.1306      0.869      0.150      0.881      -1.575       1.836
+price_rbob              -0.1083      0.024     -4.518      0.000      -0.155      -0.061
+volume_rbob          -4.898e-07   1.22e-07     -4.029      0.000   -7.28e-07   -2.51e-07
+price_wti               -0.0486      0.012     -4.080      0.000      -0.072      -0.025
+inventory_mbbl           0.0002      0.004      0.040      0.968      -0.007       0.008
+utilization_pct          0.0161      0.011      1.505      0.133      -0.005       0.037
+net_imports_kbd      -5.092e-05   9.68e-06     -5.258      0.000   -6.99e-05   -3.19e-05
+crack_spread            -0.0596      0.012     -4.950      0.000      -0.083      -0.036
+rbob_lag3                0.1789      0.034      5.191      0.000       0.111       0.247
+rbob_lag7                0.1116      0.032      3.531      0.000       0.050       0.174
+rbob_lag14               0.4858      0.017     29.308      0.000       0.453       0.518
+delta_rbob_1w           -0.2198      0.045     -4.869      0.000      -0.308      -0.131
+rbob_return_1d          -0.0823      0.134     -0.613      0.540      -0.345       0.181
+vol_rbob_10d             1.3868      0.280      4.950      0.000       0.837       1.936
+rbob_momentum_7d         0.3307      0.190      1.741      0.082      -0.042       0.703
+days_supply           1.715e-05      0.000      0.039      0.969      -0.001       0.001
+util_inv_interaction    -0.0005      0.000     -1.465      0.143      -0.001       0.000
+copula_supply_stress     0.0137      0.004      3.674      0.000       0.006       0.021
+weekday                 -0.0016      0.002     -0.906      0.365      -0.005       0.002
+is_weekend               0.0047      0.008      0.584      0.560      -0.011       0.021
+winter_blend_effect     -0.5382      0.125     -4.303      0.000      -0.783      -0.293
+days_since_oct1         -0.0017      0.000     -7.877      0.000      -0.002      -0.001
+========================================================================================
 
-The smallest eigenvalue is -3.79e-09. This might indicate that there are
+The smallest eigenvalue is -6.5e-09. This might indicate that there are
 strong multicollinearity problems or that the design matrix is singular.
+
+Metrics:
+Train Pinball Loss: 0.0325
+Test Pinball Loss: 0.0386
+Train RMSE: 0.0869
+Test RMSE: 0.0923
+Train R²: 0.976
+Test R²: -2.037

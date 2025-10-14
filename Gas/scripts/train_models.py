@@ -82,8 +82,30 @@ def main() -> None:
     summary_json_path = args.output_dir / "model_metrics_summary.json"
     summary_df.to_json(summary_json_path, orient="records", indent=2)
 
-    print(f"Model training complete. Metrics saved to {summary_path} and {summary_json_path}")
-    print(f"Artefacts available in {args.output_dir.resolve()}")
+    print(f"\n{'='*60}")
+    print(f"Model training complete!")
+    print(f"{'='*60}")
+    print(f"\nMetrics saved to:")
+    print(f"  • {summary_path}")
+    print(f"  • {summary_json_path}")
+    
+    # Print summary table
+    print(f"\n📊 Model Performance Summary:")
+    print(summary_df.to_string(index=False))
+    
+    # Print ensemble regime info if available
+    if "Ensemble" in results:
+        ensemble_out = results["Ensemble"]
+        if "eval_by_regime" in ensemble_out.metrics:
+            print(f"\n🎯 Ensemble Performance by Regime:")
+            eval_data = ensemble_out.metrics["eval_by_regime"]
+            for regime_type in ["overall", "normal", "tight", "crisis"]:
+                if regime_type in eval_data and eval_data[regime_type]["n_obs"] > 0:
+                    metrics = eval_data[regime_type]
+                    print(f"   {regime_type.capitalize():8} (n={metrics['n_obs']:3}): "
+                          f"RMSE={metrics['rmse']:.4f}, R²={metrics['r2']:.3f}")
+    
+    print(f"\nArtefacts available in {args.output_dir.resolve()}")
 
 
 if __name__ == "__main__":

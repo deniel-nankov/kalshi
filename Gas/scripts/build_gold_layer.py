@@ -61,6 +61,10 @@ GOLD_DIR = REPO_ROOT / "data" / "gold"
 
 # Feature engineering constants
 HURRICANE_PROB_OCTOBER = 0.15  # Default hurricane probability for October (source: historical NOAA data)
+DAILY_CONSUMPTION_MBBL = 8.5  # US average gasoline consumption (million barrels per day)
+WINTER_BLEND_EFFECT_MAGNITUDE = -0.12  # Price impact of winter blend transition ($/gallon)
+WINTER_BLEND_DECAY_RATE = 0.2  # Exponential decay rate for winter blend transition
+MIN_OCTOBER_SAMPLES_FOR_COPULA = 50  # Minimum observations needed for reliable copula estimation
 
 # Import copula feature (will be optional if module doesn't exist)
 try:
@@ -100,14 +104,20 @@ def _prepare_calendar(*frames: pd.DataFrame) -> pd.DataFrame:
     return calendar
 
 
-def _winter_blend_curve(dates: pd.Series, decay: float = 0.2) -> pd.Series:
+def _winter_blend_curve(dates: pd.Series, decay: float = WINTER_BLEND_DECAY_RATE) -> pd.Series:
     """
     Smooth transition function for the October blend switch.
     Returns zeros before Oct 1 of each year and decays thereafter.
+    
+    The winter blend transition typically causes a price decrease due to:
+    - Lower production costs (winter formulation is less expensive)
+    - Reduced volatility specifications
+    
+    Uses exponential decay to model the gradual market adjustment.
     """
     october_start = pd.to_datetime(dates.dt.year.astype(str) + "-10-01")
     days_since = (dates - october_start).dt.days.clip(lower=0)
-    return -0.12 * (1 - np.exp(-decay * days_since))
+    return WINTER_BLEND_EFFECT_MAGNITUDE * (1 - np.exp(-decay * days_since))
 
 
 def build_gold_dataset() -> pd.DataFrame:
@@ -190,9 +200,13 @@ def build_gold_dataset() -> pd.DataFrame:
     # === SUPPLY & REFINING BALANCE FEATURES ===
     # NEW: Days Supply (normalized inventory relative to daily consumption)
     # US average gasoline consumption is approximately 8.5 million barrels/day
-    DAILY_CONSUMPTION_MBBL = 8.5  # million barrels per day (US average)
     if "inventory_mbbl" in gold.columns:
-        gold["days_supply"] = gold["inventory_mbbl"] / DAILY_CONSUMPTION_MBBL
+        # Guard against negative or zero values
+        gold["days_supply"] = np.where(
+            gold["inventory_mbbl"] > 0,
+            gold["inventory_mbbl"] / DAILY_CONSUMPTION_MBBL,
+            np.nan
+        )
     
     # NEW: Utilization × Inventory Interaction (compound stress indicator)
     # High utilization + low inventory = severe supply constraint
@@ -210,7 +224,7 @@ def build_gold_dataset() -> pd.DataFrame:
             date_col = pd.to_datetime(gold['date'] if 'date' in gold.columns else gold.index)
             october_hist = gold.loc[date_col.dt.month == 10].copy()
             
-            if len(october_hist) >= 50:  # Need minimum observations for copula
+            if len(october_hist) >= MIN_OCTOBER_SAMPLES_FOR_COPULA:  # Need minimum observations for copula
                 # Compute copula stress using historical October data
                 gold["copula_supply_stress"] = compute_copula_stress(
                     inventory_days=gold["days_supply"],

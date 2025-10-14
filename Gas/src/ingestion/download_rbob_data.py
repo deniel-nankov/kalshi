@@ -113,6 +113,7 @@ def download_wti_futures():
     
     if df is None or len(df) == 0:
         print("❌ ERROR: Failed to download data after all retries")
+        print("   Check your internet connection or try again later")
         return None
     
     df = df.reset_index()

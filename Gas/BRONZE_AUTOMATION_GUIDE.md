@@ -85,23 +85,26 @@ cat > ~/Library/LaunchAgents/com.kalshi.bronze-automation.plist << 'EOF'
     <key>Label</key>
     <string>com.kalshi.bronze-automation</string>
     
+    <!-- Replace /path/to/project with your actual project directory -->
+    <!-- Example: $HOME/Desktop/kalshi/Gas or /Users/yourname/kalshi/Gas -->
+    
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/christianlee/Desktop/kalshi/.venv/bin/python</string>
-        <string>/Users/christianlee/Desktop/kalshi/Gas/scripts/automate_bronze.py</string>
+        <string>/path/to/project/.venv/bin/python</string>
+        <string>/path/to/project/Gas/scripts/automate_bronze.py</string>
         <string>--daemon</string>
         <string>--interval</string>
         <string>3600</string>
     </array>
     
     <key>WorkingDirectory</key>
-    <string>/Users/christianlee/Desktop/kalshi/Gas</string>
+    <string>/path/to/project/Gas</string>
     
     <key>StandardOutPath</key>
-    <string>/Users/christianlee/Desktop/kalshi/Gas/logs/bronze_automation.log</string>
+    <string>/path/to/project/Gas/logs/bronze_automation.log</string>
     
     <key>StandardErrorPath</key>
-    <string>/Users/christianlee/Desktop/kalshi/Gas/logs/bronze_automation_error.log</string>
+    <string>/path/to/project/Gas/logs/bronze_automation_error.log</string>
     
     <key>RunAtLoad</key>
     <true/>

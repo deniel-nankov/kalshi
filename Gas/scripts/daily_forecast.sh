@@ -4,8 +4,18 @@
 
 set -e  # Exit on error
 
-PROJECT_DIR="/Users/christianlee/Desktop/kalshi/Gas"
-PYTHON="/Users/christianlee/Desktop/kalshi/.venv/bin/python"
+# Determine project directory relative to script location
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Determine Python interpreter: use virtualenv if available, otherwise system python
+if [ -n "$VIRTUAL_ENV" ]; then
+    PYTHON="$VIRTUAL_ENV/bin/python"
+elif [ -f "$PROJECT_DIR/../.venv/bin/python" ]; then
+    PYTHON="$PROJECT_DIR/../.venv/bin/python"
+else
+    PYTHON="$(which python3 || which python)"
+fi
 
 cd "$PROJECT_DIR"
 

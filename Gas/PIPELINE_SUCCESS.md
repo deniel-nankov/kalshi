@@ -195,11 +195,31 @@ python scripts/run_medallion_pipeline.py
 
 ### Re-download Fresh Data
 ```bash
+#!/bin/bash
+# Safe script to clear all data layers with proper confirmation
+set -euo pipefail
+
+# Verify we're running interactively
+if [ ! -t 0 ]; then
+    echo "ERROR: This script requires interactive input. Cannot run in non-interactive mode." >&2
+    exit 1
+fi
+
 # Clear all layers
 # ⚠️  WARNING: This will permanently delete ALL data!
 echo "WARNING: This will delete all Bronze, Silver, and Gold data."
 echo "Type 'DELETE' (in capitals) to confirm:"
-read -r confirmation
+read -r confirmation || {
+    echo "ERROR: Failed to read confirmation." >&2
+    exit 1
+}
+
+# Reject empty input
+if [ -z "$confirmation" ]; then
+    echo "ERROR: Empty input received. Aborted." >&2
+    exit 1
+fi
+
 if [ "$confirmation" != "DELETE" ]; then
     echo "Aborted. No data was deleted."
     exit 1
@@ -213,11 +233,31 @@ python scripts/run_medallion_pipeline.py
 
 ### Rebuild Silver/Gold Only
 ```bash
+#!/bin/bash
+# Safe script to rebuild Silver/Gold layers with proper confirmation
+set -euo pipefail
+
+# Verify we're running interactively
+if [ ! -t 0 ]; then
+    echo "ERROR: This script requires interactive input. Cannot run in non-interactive mode." >&2
+    exit 1
+fi
+
 # Keep Bronze, rebuild Silver/Gold
 # ⚠️  WARNING: This will delete Silver and Gold layers!
 echo "WARNING: This will delete Silver and Gold data (Bronze will be preserved)."
 echo "Type 'DELETE' (in capitals) to confirm:"
-read -r confirmation
+read -r confirmation || {
+    echo "ERROR: Failed to read confirmation." >&2
+    exit 1
+}
+
+# Reject empty input
+if [ -z "$confirmation" ]; then
+    echo "ERROR: Empty input received. Aborted." >&2
+    exit 1
+fi
+
 if [ "$confirmation" != "DELETE" ]; then
     echo "Aborted. No data was deleted."
     exit 1

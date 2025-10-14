@@ -30,8 +30,18 @@ def get_latest_forecast(summary_only=False):
     # Check if forecast is recent (< 24 hours old)
     age_hours = (datetime.now().timestamp() - forecast_file.stat().st_mtime) / 3600
     
-    with open(forecast_file, 'r') as f:
-        forecast = json.load(f)
+    try:
+        with open(forecast_file, 'r') as f:
+            forecast = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"ERROR: Failed to read or parse forecast file: {forecast_file}", file=sys.stderr)
+        print(f"Details: {e}", file=sys.stderr)
+        return {
+            "error": "Invalid forecast file",
+            "status": "corrupted",
+            "details": str(e),
+            "suggestion": "Regenerate forecast: python scripts/daily_forecast.sh"
+        }
     
     # Add metadata
     forecast['metadata'] = {

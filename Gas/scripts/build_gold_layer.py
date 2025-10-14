@@ -59,6 +59,9 @@ if str(SRC_DIR) not in sys.path:
 SILVER_DIR = REPO_ROOT / "data" / "silver"
 GOLD_DIR = REPO_ROOT / "data" / "gold"
 
+# Feature engineering constants
+HURRICANE_PROB_OCTOBER = 0.15  # Default hurricane probability for October (source: historical NOAA data)
+
 # Import copula feature (will be optional if module doesn't exist)
 try:
     from features.copula_supply_stress import compute_copula_stress, validate_copula_feature
@@ -177,7 +180,12 @@ def build_gold_dataset() -> pd.DataFrame:
     
     # NEW: RBOB Momentum (percentage change over 7 days)
     # Captures velocity of price changes, not just position
-    gold["rbob_momentum_7d"] = (gold["price_rbob"] - gold["rbob_lag7"]) / gold["rbob_lag7"]
+    # Guard against division by zero with np.where
+    gold["rbob_momentum_7d"] = np.where(
+        (gold["rbob_lag7"] == 0) | gold["rbob_lag7"].isna(),
+        np.nan,
+        (gold["price_rbob"] - gold["rbob_lag7"]) / gold["rbob_lag7"]
+    )
 
     # === SUPPLY & REFINING BALANCE FEATURES ===
     # NEW: Days Supply (normalized inventory relative to daily consumption)
@@ -198,16 +206,16 @@ def build_gold_dataset() -> pd.DataFrame:
         print("\n🎯 Computing copula supply stress feature...")
         try:
             # Extract October data for historical calibration (more stable estimates)
-            gold_temp = gold.reset_index() if gold.index.name == 'date' else gold.copy()
-            gold_temp['date_col'] = pd.to_datetime(gold_temp['date']) if 'date' in gold_temp.columns else gold.index
-            october_hist = gold_temp[gold_temp['date_col'].dt.month == 10].copy()
+            # Simplified date handling: extract date column regardless of index/column status
+            date_col = pd.to_datetime(gold['date'] if 'date' in gold.columns else gold.index)
+            october_hist = gold.loc[date_col.dt.month == 10].copy()
             
             if len(october_hist) >= 50:  # Need minimum observations for copula
                 # Compute copula stress using historical October data
                 gold["copula_supply_stress"] = compute_copula_stress(
                     inventory_days=gold["days_supply"],
                     utilization_pct=gold["utilization_pct"],
-                    hurricane_prob=0.15,  # October average probability
+                    hurricane_prob=HURRICANE_PROB_OCTOBER,
                     historical_data=october_hist[["days_supply", "utilization_pct"]].dropna()
                 )
                 print("   ✓ Copula stress feature added successfully")

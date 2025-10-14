@@ -16,8 +16,13 @@ def get_price():
         print("ERROR: No forecast found. Run ./scripts/daily_forecast.sh first.", file=sys.stderr)
         sys.exit(1)
     
-    with open(forecast_file, 'r') as f:
-        forecast = json.load(f)
+    try:
+        with open(forecast_file, 'r') as f:
+            forecast = json.load(f)
+    except (json.JSONDecodeError, Exception) as e:
+        print(f"ERROR: Failed to parse forecast file: {forecast_file}", file=sys.stderr)
+        print(f"Details: {e}", file=sys.stderr)
+        sys.exit(1)
     
     return forecast.get('point_forecast')
 

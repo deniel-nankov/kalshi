@@ -9,7 +9,7 @@ from typing import Optional
 
 import pandas as pd
 
-from eia_client import EIAClient, EIAClientError, default_params
+from .eia_client import EIAClient, EIAClientError, default_params
 
 SILVER_DIR = Path(__file__).resolve().parents[1] / "data" / "silver"
 

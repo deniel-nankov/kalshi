@@ -2,7 +2,9 @@
 # System Health Check
 # Monitors data automation, forecasts, and system resources
 
-PROJECT_DIR="/Users/christianlee/Desktop/kalshi/Gas"
+# Determine project directory relative to script location
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="${PROJECT_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 cd "$PROJECT_DIR"
 
 echo "🏥 System Health Check - $(date)"

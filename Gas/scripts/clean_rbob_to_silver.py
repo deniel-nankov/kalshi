@@ -51,11 +51,15 @@ def clean_rbob_to_silver():
     df['price_rbob'] = df['price_rbob'].astype(float)
     df['volume_rbob'] = df['volume_rbob'].astype(float)
     
-    # 4. Sanity checks (validation)
-    assert df['price_rbob'].min() > 0.5, f"RBOB price too low: ${df['price_rbob'].min():.2f}"
-    assert df['price_rbob'].max() < 8.0, f"RBOB price too high: ${df['price_rbob'].max():.2f}"
-    assert len(df) > 1000, f"Too few observations: {len(df)} (expected >1000)"
-    assert df['date'].is_monotonic_increasing or df['date'].is_monotonic_decreasing, "Dates not ordered"
+    # 4. Sanity checks (validation) - replaced assert with explicit validation for production safety
+    if df['price_rbob'].min() <= 0.5:
+        raise ValueError(f"RBOB price too low: ${df['price_rbob'].min():.2f} (expected > $0.50/gallon)")
+    if df['price_rbob'].max() >= 8.0:
+        raise ValueError(f"RBOB price too high: ${df['price_rbob'].max():.2f} (expected < $8.00/gallon)")
+    if len(df) <= 1000:
+        raise ValueError(f"Too few observations: {len(df)} (expected > 1000 for reliable analysis)")
+    if not (df['date'].is_monotonic_increasing or df['date'].is_monotonic_decreasing):
+        raise ValueError("Dates not properly ordered (must be monotonic)")
     
     # 5. Remove duplicates if any
     original_len = len(df)
@@ -110,10 +114,13 @@ def clean_wti_to_silver():
     df['date'] = pd.to_datetime(df['date']).dt.tz_localize(None)
     df['price_wti'] = df['price_wti'].astype(float)
     
-    # 4. Sanity checks
-    assert df['price_wti'].min() > 10, f"WTI price too low: ${df['price_wti'].min():.2f}"
-    assert df['price_wti'].max() < 200, f"WTI price too high: ${df['price_wti'].max():.2f}"
-    assert len(df) > 1000, f"Too few observations: {len(df)}"
+    # 4. Sanity checks - replaced assert with explicit validation for production safety
+    if df['price_wti'].min() <= 10:
+        raise ValueError(f"WTI price too low: ${df['price_wti'].min():.2f} (expected > $10/barrel)")
+    if df['price_wti'].max() >= 200:
+        raise ValueError(f"WTI price too high: ${df['price_wti'].max():.2f} (expected < $200/barrel)")
+    if len(df) <= 1000:
+        raise ValueError(f"Too few observations: {len(df)} (expected > 1000 for reliable analysis)")
     
     # 5. Remove duplicates
     original_len = len(df)

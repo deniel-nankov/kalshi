@@ -35,9 +35,27 @@ echo "✅ Python interpreter: $VENV_PYTHON"
 echo "✅ Automation script: $SCRIPT_PATH"
 echo ""
 
-# Ask for check interval
-read -p "Check interval in seconds (default: 3600 = 1 hour): " INTERVAL
-INTERVAL=${INTERVAL:-3600}
+# Ask for check interval with validation
+read -p "Check interval in seconds (default: 3600 = 1 hour): " INTERVAL_INPUT
+INTERVAL_INPUT="${INTERVAL_INPUT// /}"  # Trim whitespace
+
+# Validate input
+if [ -z "$INTERVAL_INPUT" ]; then
+    INTERVAL=3600  # Default
+elif [[ "$INTERVAL_INPUT" =~ ^[0-9]+$ ]]; then
+    if [ "$INTERVAL_INPUT" -lt 60 ]; then
+        echo "❌ ERROR: Interval must be at least 60 seconds. Using default 3600." >&2
+        INTERVAL=3600
+    elif [ "$INTERVAL_INPUT" -gt 86400 ]; then
+        echo "❌ ERROR: Interval must be at most 86400 seconds (24 hours). Using default 3600." >&2
+        INTERVAL=3600
+    else
+        INTERVAL="$INTERVAL_INPUT"
+    fi
+else
+    echo "❌ ERROR: Interval must be a positive integer. Using default 3600." >&2
+    INTERVAL=3600
+fi
 
 echo ""
 echo "Configuration:"
@@ -101,7 +119,10 @@ echo ""
 
 # Load the service
 echo "Loading service..."
-launchctl load "$PLIST_PATH"
+if ! launchctl load "$PLIST_PATH"; then
+    echo "❌ ERROR: Failed to load service at $PLIST_PATH" >&2
+    exit 1
+fi
 
 # Wait a moment for service to start
 sleep 2

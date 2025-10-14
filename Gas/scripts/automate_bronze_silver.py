@@ -31,6 +31,11 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, List
 import json
 
+# Import shared modules
+from scheduling import DataSourceSchedule
+from metadata import get_last_download_time, save_download_time
+from script_runner import run_script_with_retry
+
 # Setup paths
 SCRIPTS_DIR = Path(__file__).parent
 INGESTION_DIR = Path(__file__).parent.parent / "src" / "ingestion"
@@ -55,96 +60,9 @@ logging.basicConfig(
 logger = logging.getLogger('bronze_silver_automation')
 
 
-class DataSourceSchedule:
-    """Data source update schedules"""
-    
-    # EIA updates: Wednesday 10:30 AM ET
-    EIA_UPDATE_DAY = 2  # Wednesday (0 = Monday)
-    EIA_UPDATE_HOUR = 15  # 10:30 AM ET = 15:30 UTC (approximate)
-    EIA_UPDATE_MINUTE = 30
-    
-    # RBOB: Market hours Mon-Fri 9:30 AM - 4:00 PM ET
-    RBOB_MARKET_OPEN_HOUR = 14
-    RBOB_MARKET_CLOSE_HOUR = 21
-    
-    # Retail: Updates Monday morning
-    RETAIL_UPDATE_DAY = 0  # Monday
-    RETAIL_UPDATE_HOUR = 12
-    
-    @staticmethod
-    def get_eia_update_time() -> datetime:
-        """Get next EIA update time"""
-        now = datetime.now()
-        days_ahead = (DataSourceSchedule.EIA_UPDATE_DAY - now.weekday()) % 7
-        if days_ahead == 0:
-            update_time = now.replace(
-                hour=DataSourceSchedule.EIA_UPDATE_HOUR,
-                minute=DataSourceSchedule.EIA_UPDATE_MINUTE,
-                second=0,
-                microsecond=0
-            )
-            if now >= update_time:
-                days_ahead = 7
-        
-        next_update = now + timedelta(days=days_ahead)
-        next_update = next_update.replace(
-            hour=DataSourceSchedule.EIA_UPDATE_HOUR,
-            minute=DataSourceSchedule.EIA_UPDATE_MINUTE,
-            second=0,
-            microsecond=0
-        )
-        return next_update
-    
-    @staticmethod
-    def is_market_hours() -> bool:
-        """Check if it's currently market hours for RBOB"""
-        now = datetime.now()
-        if now.weekday() >= 5:  # Weekend
-            return False
-        hour = now.hour
-        return DataSourceSchedule.RBOB_MARKET_OPEN_HOUR <= hour <= DataSourceSchedule.RBOB_MARKET_CLOSE_HOUR
-    
-    @staticmethod
-    def get_retail_update_time() -> datetime:
-        """Get next retail price update time"""
-        now = datetime.now()
-        days_ahead = (DataSourceSchedule.RETAIL_UPDATE_DAY - now.weekday()) % 7
-        if days_ahead == 0:
-            update_time = now.replace(
-                hour=DataSourceSchedule.RETAIL_UPDATE_HOUR,
-                minute=0,
-                second=0,
-                microsecond=0
-            )
-            if now >= update_time:
-                days_ahead = 7
-        
-        next_update = now + timedelta(days=days_ahead)
-        next_update = next_update.replace(
-            hour=DataSourceSchedule.RETAIL_UPDATE_HOUR,
-            minute=0,
-            second=0,
-            microsecond=0
-        )
-        return next_update
-
-
-def get_last_download_time(source: str) -> Optional[datetime]:
-    """Get the last download time for a data source"""
-    metadata_file = BRONZE_DIR / f"{source}_metadata.json"
-    if not metadata_file.exists():
-        return None
-    
-    try:
-        with open(metadata_file, 'r') as f:
-            metadata = json.load(f)
-            timestamp_str = metadata.get('last_download')
-            if timestamp_str:
-                return datetime.fromisoformat(timestamp_str)
-    except Exception as e:
-        logger.warning(f"Could not read metadata for {source}: {e}")
-    
-    return None
+# DataSourceSchedule now imported from scheduling.py
+# get_last_download_time and save_download_time now imported from metadata.py
+# run_script_with_retry now imported from script_runner.py
 
 
 def get_last_processing_time(layer: str = 'silver') -> Optional[datetime]:
@@ -165,21 +83,7 @@ def get_last_processing_time(layer: str = 'silver') -> Optional[datetime]:
     return None
 
 
-def save_download_time(source: str):
-    """Save the download time for a data source"""
-    BRONZE_DIR.mkdir(parents=True, exist_ok=True)
-    metadata_file = BRONZE_DIR / f"{source}_metadata.json"
-    
-    metadata = {
-        'last_download': datetime.now().isoformat(),
-        'source': source
-    }
-    
-    try:
-        with open(metadata_file, 'w') as f:
-            json.dump(metadata, f, indent=2)
-    except Exception as e:
-        logger.error(f"Could not save metadata for {source}: {e}")
+# save_download_time now imported from metadata.py
 
 
 def save_processing_time(layer: str = 'silver'):
@@ -191,9 +95,9 @@ def save_processing_time(layer: str = 'silver'):
         'last_processed': datetime.now().isoformat(),
         'layer': layer,
         'bronze_sources_processed': {
-            'eia': get_last_download_time('eia').isoformat() if get_last_download_time('eia') else None,
-            'rbob': get_last_download_time('rbob').isoformat() if get_last_download_time('rbob') else None,
-            'retail': get_last_download_time('retail').isoformat() if get_last_download_time('retail') else None,
+            'eia': get_last_download_time('eia', BRONZE_DIR).isoformat() if get_last_download_time('eia', BRONZE_DIR) else None,
+            'rbob': get_last_download_time('rbob', BRONZE_DIR).isoformat() if get_last_download_time('rbob', BRONZE_DIR) else None,
+            'retail': get_last_download_time('retail', BRONZE_DIR).isoformat() if get_last_download_time('retail', BRONZE_DIR) else None,
         }
     }
     
@@ -248,7 +152,7 @@ def should_update_eia(force: bool = False) -> bool:
     if force:
         return True
     
-    last_download = get_last_download_time('eia')
+    last_download = get_last_download_time('eia', BRONZE_DIR)
     if last_download is None:
         logger.info("EIA: No previous download found")
         return True
@@ -276,7 +180,7 @@ def should_update_rbob(force: bool = False) -> bool:
         logger.info("RBOB: Market is closed")
         return False
     
-    last_download = get_last_download_time('rbob')
+    last_download = get_last_download_time('rbob', BRONZE_DIR)
     if last_download is None:
         logger.info("RBOB: No previous download found")
         return True
@@ -295,7 +199,7 @@ def should_update_retail(force: bool = False) -> bool:
     if force:
         return True
     
-    last_download = get_last_download_time('retail')
+    last_download = get_last_download_time('retail', BRONZE_DIR)
     if last_download is None:
         logger.info("Retail: No previous download found")
         return True
@@ -326,9 +230,9 @@ def should_rebuild_silver(force: bool = False) -> bool:
     
     # Check if any Bronze source is newer than Silver
     bronze_sources = {
-        'eia': get_last_download_time('eia'),
-        'rbob': get_last_download_time('rbob'),
-        'retail': get_last_download_time('retail')
+        'eia': get_last_download_time('eia', BRONZE_DIR),
+        'rbob': get_last_download_time('rbob', BRONZE_DIR),
+        'retail': get_last_download_time('retail', BRONZE_DIR)
     }
     
     for source, download_time in bronze_sources.items():
@@ -355,7 +259,7 @@ def update_bronze_layer(force: bool = False) -> Dict[str, bool]:
             "Download EIA data"
         )
         if success:
-            save_download_time('eia')
+            save_download_time('eia', BRONZE_DIR)
         results['eia'] = success
     else:
         results['eia'] = None
@@ -367,7 +271,7 @@ def update_bronze_layer(force: bool = False) -> Dict[str, bool]:
             "Download RBOB/WTI data"
         )
         if success:
-            save_download_time('rbob')
+            save_download_time('rbob', BRONZE_DIR)
         results['rbob'] = success
     else:
         results['rbob'] = None
@@ -379,7 +283,7 @@ def update_bronze_layer(force: bool = False) -> Dict[str, bool]:
             "Download Retail prices"
         )
         if success:
-            save_download_time('retail')
+            save_download_time('retail', BRONZE_DIR)
         results['retail'] = success
     else:
         results['retail'] = None

@@ -133,6 +133,8 @@ All 4 training scripts now work end-to-end:
 
 ### Walk-Forward Validation (2021-2024)
 
+**⚠️ WARNING: These metrics conflict with baseline R²≈0.9999, indicating potential data leakage or evaluation inconsistency.**
+
 **Setup:** 5 horizons × 4 years = 20 tests
 
 | Horizon | Avg RMSE | Avg R² | Avg MAPE | Best Alpha |
@@ -150,9 +152,19 @@ All 4 training scripts now work end-to-end:
 - **Consistent alpha:** CV always selects minimal regularization (0.01)
 - **MAPE growth:** 0.5% (1-day) → 4.0% (21-day)
 
+**⚠️ CRITICAL ISSUES REQUIRING INVESTIGATION:**
+1. **Data leakage check:** Verify walk-forward uses identical splits/preprocessing as baseline (no future data in training)
+2. **Evaluation consistency:** Ensure baseline and walk-forward compute R²/RMSE identically
+3. **Required fixes:**
+   - Re-run baseline using walk-forward split methodology
+   - Add unit tests asserting no train/validation timestamp overlap
+   - Verify feature engineering (scaling, lags) computed only on training data
+   - Document reconciled metrics after fixing inconsistencies
+
 **Implications:**
-- Model excels at short-term forecasting (1-7 days)
+- Model excels at short-term forecasting (1-7 days) *if leakage is fixed*
 - October 31 forecast from Oct 10 data (21-day horizon) may be unreliable
+- **System NOT production-ready** until evaluation methodology is corrected
 - Consider using shorter forecast horizons or ensemble methods
 
 ---
@@ -320,6 +332,11 @@ python scripts/run_pipeline.py --skip-freshness
 ## 🛠️ Technical Details
 
 ### Feature Set (22 Features)
+
+**Note:** `retail_margin` was identified as causing data leakage (perfect reconstruction of target).
+Current code retains `retail_margin` and lagged versions (`retail_margin_lag7`, `retail_margin_lag14`).
+For production models, use **only lagged versions** to avoid leakage.
+
 ```python
 COMMON_FEATURES = [
     "price_rbob",           # RBOB futures price
@@ -329,7 +346,9 @@ COMMON_FEATURES = [
     "utilization_pct",      # Refinery utilization
     "net_imports_kbd",      # Net imports
     "crack_spread",         # Refining margin
-    "retail_margin",        # Retail markup
+    "retail_margin",        # Retail markup (⚠️ CAUSES LEAKAGE - use lagged versions)
+    "retail_margin_lag7",   # 7-day lagged retail margin (SAFE)
+    "retail_margin_lag14",  # 14-day lagged retail margin (SAFE)
     "rbob_lag3",            # 3-day RBOB lag
     "rbob_lag7",            # 7-day RBOB lag
     "rbob_lag14",           # 14-day RBOB lag

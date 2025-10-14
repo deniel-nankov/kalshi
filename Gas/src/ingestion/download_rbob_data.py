@@ -17,6 +17,8 @@ Cost: FREE
 """
 
 from pathlib import Path
+import sys
+import time
 
 import pandas as pd
 import yfinance as yf
@@ -24,18 +26,33 @@ import yfinance as yf
 SILVER_DIR = Path(__file__).resolve().parents[1] / "data" / "silver"
 
 def download_rbob_futures():
-    """Download daily RBOB gasoline futures from Yahoo Finance"""
+    """Download daily RBOB gasoline futures from Yahoo Finance with retry logic"""
     
     print("Downloading RBOB futures (RB=F)...")
     
     # RB=F is the front-month RBOB futures contract
     ticker = yf.Ticker("RB=F")
     
-    # Download from Oct 2020 to present
-    df = ticker.history(start="2020-10-01", end=pd.Timestamp.today())
+    # Download from Oct 2020 to present with retry logic
+    df = None
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            df = ticker.history(start="2020-10-01", end=pd.Timestamp.today())
+            if len(df) > 0:
+                break  # Success!
+            else:
+                print(f"   Attempt {attempt}/{max_retries}: No data returned")
+        except Exception as e:
+            print(f"   Attempt {attempt}/{max_retries} failed: {e}", file=sys.stderr)
+        
+        if attempt < max_retries:
+            wait_time = 2 ** attempt  # Exponential backoff: 2s, 4s, 8s
+            print(f"   Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
     
-    if len(df) == 0:
-        print("❌ ERROR: No data returned from Yahoo Finance")
+    if df is None or len(df) == 0:
+        print("❌ ERROR: Failed to download data after all retries")
         print("   Check your internet connection or try again later")
         return None
     
@@ -70,15 +87,32 @@ def download_rbob_futures():
     return df
 
 def download_wti_futures():
-    """Download daily WTI crude futures from Yahoo Finance"""
+    """Download daily WTI crude futures from Yahoo Finance with retry logic"""
     
     print("\nDownloading WTI crude futures (CL=F)...")
     
     ticker = yf.Ticker("CL=F")
-    df = ticker.history(start="2020-10-01", end=pd.Timestamp.today())
     
-    if len(df) == 0:
-        print("❌ ERROR: No data returned from Yahoo Finance")
+    # Download with retry logic
+    df = None
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            df = ticker.history(start="2020-10-01", end=pd.Timestamp.today())
+            if len(df) > 0:
+                break  # Success!
+            else:
+                print(f"   Attempt {attempt}/{max_retries}: No data returned")
+        except Exception as e:
+            print(f"   Attempt {attempt}/{max_retries} failed: {e}", file=sys.stderr)
+        
+        if attempt < max_retries:
+            wait_time = 2 ** attempt  # Exponential backoff: 2s, 4s, 8s
+            print(f"   Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+    
+    if df is None or len(df) == 0:
+        print("❌ ERROR: Failed to download data after all retries")
         return None
     
     df = df.reset_index()

@@ -68,7 +68,7 @@ MIN_OCTOBER_SAMPLES_FOR_COPULA = 50  # Minimum observations needed for reliable 
 
 # Import copula feature (will be optional if module doesn't exist)
 try:
-    from features.copula_supply_stress import compute_copula_stress, validate_copula_feature
+    from features.copula_supply_stress import compute_copula_stress, validate_copula_feature  # type: ignore[import-not-found]
     COPULA_AVAILABLE = True
 except ImportError:
     COPULA_AVAILABLE = False
@@ -305,7 +305,7 @@ def save_outputs(gold: pd.DataFrame) -> None:
         print("VALIDATING COPULA FEATURE")
         print("=" * 80)
         try:
-            from features.copula_supply_stress import validate_copula_feature, print_validation_report
+            from features.copula_supply_stress import validate_copula_feature, print_validation_report  # type: ignore[import-not-found]
             metrics = validate_copula_feature(model_ready, target="retail_price")
             print_validation_report(metrics)
         except Exception as e:

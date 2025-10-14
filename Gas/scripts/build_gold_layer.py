@@ -207,6 +207,23 @@ def build_gold_dataset() -> pd.DataFrame:
             gold["inventory_mbbl"] / DAILY_CONSUMPTION_MBBL,
             np.nan
         )
+        
+        # NEW: Inventory Surprise (for Model 2 - Inventory Premium model)
+        # Markets react to deviations from expectations, not absolute levels
+        # Expected inventory = 4-week moving average + seasonal adjustment
+        gold["inventory_expected"] = gold["inventory_mbbl"].rolling(window=4, min_periods=1).mean()
+        gold["inventory_deviation"] = gold["inventory_mbbl"] - gold["inventory_expected"]
+        
+        # Normalize by historical standard deviation (z-score)
+        # Use expanding window to avoid look-ahead bias
+        inventory_std = gold["inventory_deviation"].expanding(min_periods=20).std()
+        gold["inventory_surprise"] = np.where(
+            inventory_std > 0,
+            gold["inventory_deviation"] / inventory_std,
+            0.0
+        )
+        # Forward fill any initial NaNs from expanding window
+        gold["inventory_surprise"] = gold["inventory_surprise"].fillna(0.0)
     
     # NEW: Utilization × Inventory Interaction (compound stress indicator)
     # High utilization + low inventory = severe supply constraint

@@ -6,7 +6,24 @@ Usage:
 
 Expected inputs (Silver layer):
     - rbob_daily.parquet
-    - wti_daily.parquet
+    - wt    # === PRICE & MARKET STRUCTURE FEATURES ===
+    gold["crack_spread"] = gold["price_rbob"] - gold["price_wti"]
+    gold["retail_margin"] = gold["retail_price"] - gold["price_rbob"]
+    
+    # NEW: Futures Basis (for Model 3 - Futures-Based model)
+    # Basis = Retail Price - RBOB Futures Price
+    # Captures the local retail premium over wholesale futures
+    # Positive basis = retail trading above futures (normal)
+    # Negative basis = retail trading below futures (anomaly)
+    gold["basis"] = gold["retail_price"] - gold["price_rbob"]
+    
+    # Lagged basis (SAFE - uses past values only, no leakage)
+    gold["basis_lag7"] = gold["basis"].shift(7)
+    gold["basis_lag14"] = gold["basis"].shift(14)
+    
+    # Lagged retail margin (SAFE - uses past values only, no leakage)
+    gold["retail_margin_lag7"] = gold["retail_margin"].shift(7)
+    gold["retail_margin_lag14"] = gold["retail_margin"].shift(14).parquet
     - retail_prices_daily.parquet
     - eia_inventory_weekly.parquet
     - eia_utilization_weekly.parquet
@@ -177,6 +194,17 @@ def build_gold_dataset() -> pd.DataFrame:
     gold["crack_spread"] = gold["price_rbob"] - gold["price_wti"]
     gold["retail_margin"] = gold["retail_price"] - gold["price_rbob"]
     
+    # NEW: Futures Basis (for Model 3 - Futures-Based model)
+    # Basis = Retail Price - RBOB Futures Price
+    # Captures the local retail premium over wholesale futures
+    # Positive basis = retail trading above futures (normal)
+    # Negative basis = retail trading below futures (anomaly)
+    gold["basis"] = gold["retail_price"] - gold["price_rbob"]
+    
+    # Lagged basis (SAFE - uses past values only, no leakage)
+    gold["basis_lag7"] = gold["basis"].shift(7)
+    gold["basis_lag14"] = gold["basis"].shift(14)
+    
     # Lagged retail margin (SAFE - uses past values only, no leakage)
     gold["retail_margin_lag7"] = gold["retail_margin"].shift(7)
     gold["retail_margin_lag14"] = gold["retail_margin"].shift(14)
@@ -296,6 +324,9 @@ def save_outputs(gold: pd.DataFrame) -> None:
         "retail_price",
         "crack_spread",
         "retail_margin",
+        "basis",                # NEW: futures basis (safe)
+        "basis_lag7",           # NEW: lagged basis (safe)
+        "basis_lag14",          # NEW: lagged basis (safe)
         "retail_margin_lag7",   # NEW: lagged retail margin (safe)
         "retail_margin_lag14",  # NEW: lagged retail margin (safe)
         "rbob_lag3",

@@ -31,30 +31,33 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 GOLD_DIR = REPO_ROOT / "data" / "gold"
 DATA_PATH = GOLD_DIR / "master_model_ready.parquet"
 
-# Regime thresholds
-def regime_label(days_supply):
-    if days_supply > 26:
-        return "Normal"
-    elif days_supply > 23:
-        return "Tight"
-    else:
-        return "Crisis"
+# Use shared regime logic
+from Gas.deploy.regimes import regime_label
 
 
 
 from sklearn.model_selection import TimeSeriesSplit
 
 def main():
-    # Load data
-    df = pd.read_parquet(DATA_PATH)
+    # Load data with error handling
+    try:
+        df = pd.read_parquet(DATA_PATH)
+    except (FileNotFoundError, OSError, Exception) as e:
+        print(f"Error loading data from {DATA_PATH}: {e}")
+        return
+    # Validate required columns
+    required_cols = ["date", "retail_price", "target", "regime"]
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    if missing_cols:
+        print(f"Missing required columns in data: {missing_cols}")
+        return
     df = df.copy()
     df["regime"] = df["days_supply"].apply(regime_label)
-
     # Features and target
-    feature_cols = [
-        c for c in df.columns
-        if c not in ["date", "retail_price", "target", "regime"]
-    ]
+    feature_cols = [c for c in df.columns if c not in ["date", "retail_price", "target", "regime"]]
+    if not feature_cols:
+        print("No feature columns found in data after excluding required columns.")
+        return
     X = df[feature_cols]
     y = df["retail_price"]
 

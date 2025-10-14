@@ -18,15 +18,10 @@ DATA_PATH = GOLD_DIR / "master_model_ready.parquet"
 MODEL_DIR = REPO_ROOT / "deploy" / "models"
 MODEL_DIR.mkdir(exist_ok=True)
 
-REGIMES = ["Normal", "Tight"]
 
-def regime_label(days_supply):
-    if days_supply > 26:
-        return "Normal"
-    elif days_supply > 23:
-        return "Tight"
-    else:
-        return "Crisis"
+# Use shared regime logic
+from Gas.deploy.regimes import REGIMES, regime_label
+# REGIMES includes all possible outputs of regime_label (Normal, Tight, Crisis)
 
 def main():
     df = pd.read_parquet(DATA_PATH)

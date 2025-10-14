@@ -17,15 +17,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MODEL_DIR = REPO_ROOT / "deploy" / "models"
 
-REGIMES = ["Normal", "Tight"]
 
-def regime_label(days_supply):
-    if days_supply > 26:
-        return "Normal"
-    elif days_supply > 23:
-        return "Tight"
-    else:
-        return "Crisis"
+from Gas.deploy.regimes import REGIMES, regime_label
 
 def load_models():
     models = {}
@@ -42,11 +35,23 @@ def main():
     parser.add_argument("--output", default=None, help="Optional output CSV file")
     args = parser.parse_args()
     df = pd.read_csv(args.input)
-    if "days_supply" not in df.columns:
-        raise ValueError("Input must contain 'days_supply' column for regime assignment.")
-    df["regime"] = df["days_supply"].apply(regime_label)
+    # Validate required features: days_supply and utilization_pct
+    for col in ["days_supply", "utilization_pct"]:
+        if col not in df.columns:
+            raise ValueError(f"Input is missing required column: {col}")
+    # Assign regime using full row (regime_label expects row)
+    df["regime"] = df.apply(regime_label, axis=1)
     models = load_models()
     preds = []
+    # Validate all required feature columns only for regimes present in input
+    present_regimes = set(df["regime"].unique())
+    for regime in present_regimes:
+        if regime not in models:
+            continue  # Will be handled in prediction loop
+        _, feature_cols = models[regime]
+        missing = [col for col in feature_cols if col not in df.columns]
+        if missing:
+            raise ValueError(f"Missing columns for regime '{regime}': {missing}")
     for idx, row in df.iterrows():
         regime = row["regime"]
         if regime not in models:

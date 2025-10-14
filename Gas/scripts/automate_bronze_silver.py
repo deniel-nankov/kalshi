@@ -302,19 +302,32 @@ def update_silver_layer() -> bool:
         ("clean_retail_to_silver.py", "Clean Retail prices"),
         ("clean_eia_to_silver.py", "Clean EIA data"),
     ]
-    
+
     all_success = True
     for script_name, description in silver_scripts:
         success = run_script(SCRIPTS_DIR / script_name, description)
         if not success:
             all_success = False
-    
+
+    # Run optional Silver data scripts (PADD3 share, NOAA temp, hurricane risk)
+    optional_scripts = [
+        ("download_padd3_share.py", "Download PADD3 share (optional)"),
+        ("download_noaa_temp.py", "Download NOAA temperature (optional)"),
+        ("process_hurricane_risk_october.py", "Process hurricane risk for October (optional)")
+    ]
+    for script_name, description in optional_scripts:
+        script_path = SCRIPTS_DIR / script_name
+        if script_path.exists():
+            run_script(script_path, description, max_retries=2)
+        else:
+            logger.info(f"Optional script not found: {script_path}")
+
     if all_success:
         save_processing_time('silver')
         logger.info("✅ Silver layer processing complete")
     else:
         logger.error("❌ Silver layer processing had failures")
-    
+
     return all_success
 
 

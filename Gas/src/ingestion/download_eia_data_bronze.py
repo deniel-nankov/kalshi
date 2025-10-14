@@ -1,3 +1,4 @@
+
 """
 Download EIA weekly petroleum data to Bronze Layer
 
@@ -17,7 +18,8 @@ from typing import Optional
 
 import pandas as pd
 
-from .eia_client import EIAClient, EIAClientError, default_params
+# Use absolute import for script execution
+from ingestion.eia_client import EIAClient, EIAClientError, default_params
 
 BRONZE_DIR = Path(__file__).resolve().parents[1] / "data" / "bronze"
 

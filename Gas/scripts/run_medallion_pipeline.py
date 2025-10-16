@@ -10,6 +10,7 @@ This orchestrates the full medallion architecture:
 Run this to execute the complete data pipeline.
 """
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -31,10 +32,20 @@ def run_script(script_name: str, description: str, use_ingestion: bool = False) 
         return False
     
     try:
+        env = None
+        if use_ingestion:
+            src_root = INGESTION_DIR.parent
+            existing = os.environ.get("PYTHONPATH", "")
+            new_path = str(src_root)
+            if existing:
+                new_path = new_path + os.pathsep + existing
+            env = {**os.environ, "PYTHONPATH": new_path}
+
         result = subprocess.run(
             [sys.executable, str(script_path)],
             check=True,
-            capture_output=False
+            capture_output=False,
+            env=env,
         )
         return result.returncode == 0
     except subprocess.CalledProcessError as e:
@@ -91,6 +102,19 @@ def main():
         print(f"\n⚠️  Silver layer validation issues detected")
         # Don't fail - just warn
     
+    # Optional: Weather & Hurricane features
+    print("\n🌦️  OPTIONAL PHASE: WEATHER & HURRICANE FEATURES")
+    print("-" * 80)
+
+    optional_scripts = [
+        ("download_noaa_temp.py", "Download NOAA temperature anomalies"),
+        ("process_hurricane_risk_october.py", "Process Gulf hurricane risk"),
+    ]
+
+    for script, desc in optional_scripts:
+        if not run_script(script, desc):
+            print(f"  ⚠️  Optional feature step skipped: {desc}")
+
     # Step 4: Build Gold
     print("\n⭐ PHASE 4: BUILDING GOLD LAYER")
     print("-" * 80)

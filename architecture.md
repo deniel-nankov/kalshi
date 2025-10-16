@@ -99,6 +99,10 @@ Captures consumption patterns and temperature effects that influence demand, esp
 | **Hurricane & Storm Alerts** | Event-based | NOAA / EIA | Path, impact region | Supply shock risk |
 | **Blend-Switch Dates** (Summer → Winter) | Annual | EPA | Regulatory transition | Lower-cost blend timing |
 
+**Data status (Oct 2025)**  
+- Core seasonal features (winter blend, weekday effects) ship with the Gold layer.  
+- Temperature and hurricane columns are **optional**: the pipeline will automatically ingest `Gas/data/silver/noaa_temp_daily.parquet` and `Gas/data/silver/hurricane_risk_october.csv` when those files are provided. Until then, the model runs without them; add Gulf Coast (PADD 3) temperature anomalies and NHC storm probabilities to activate the weather features.
+
 ### October-Specific Seasonal Dynamics
 
 **Critical October Effect: Winter Blend Transition**
@@ -915,14 +919,23 @@ gold['inventory_is_ffill'] = gold['inventory'].isna().shift(1).fillna(False)
 
 **3. Create Lags** (15 minutes)
 ```python
-# Create lagged RBOB (3, 7, 14 days)
-gold['rbob_lag3'] = gold['price_rbob'].shift(3)
-gold['rbob_lag7'] = gold['price_rbob'].shift(7)
-gold['rbob_lag14'] = gold['price_rbob'].shift(14)
+# Core pass-through lags
+gold["rbob_lag3"] = gold["price_rbob"].shift(3)
+gold["rbob_lag7"] = gold["price_rbob"].shift(7)
+gold["rbob_lag14"] = gold["price_rbob"].shift(14)
+gold["rbob_lag21"] = gold["price_rbob"].shift(21)
 
 # Target: Retail price (we're forecasting this)
-gold['target'] = gold['price_retail']
+gold["target"] = gold["retail_price"]
 ```
+
+**4. Horizon-Aligned Features (Oct 2025 refresh)**
+- 21-day moving averages/volatility (`price_rbob_ma21`, `vol_rbob_21d`)
+- Medium-term spreads (`crack_spread_ma21`, `crack_spread_change_3w`, `basis_trend_3w`)
+- Retail price trend proxies (`retail_price_change_3w`, `retail_price_trend_3w`)
+- Optional weather/shock inputs (`temp_anomaly`, `storm_prob`, `geopolitical_shock`) that activate when upstream data files are supplied.
+
+These engineered features feed the ridge and gradient-boosting models so they “see” the full 21‑day horizon rather than just the traditional 3–7 day passthrough window.
 
 **4. Create Derived Features** (1 hour)
 ```python
@@ -1108,11 +1121,12 @@ Crack Spread = RBOB Price - WTI Price
 
 **Goal**: Demonstrate understanding of gas price dynamics through **complementary modeling perspectives**, not a single black-box model.
 
-**Strategy**: Build 4 models, each capturing different aspects of the price formation process:
-1. **Pass-Through Model** - Mechanical price transmission
-2. **Inventory Model** - Supply-demand fundamentals
-3. **Futures Curve Model** - Market expectations
-4. **Ensemble Model** - Regime-weighted combination
+**Strategy**: Build four interpretable models, then layer a constrained non-linear learner inside the ensemble:
+1. **Pass-Through Model** – Mechanical price transmission  
+2. **Inventory Model** – Supply-demand fundamentals  
+3. **Futures Curve Model** – Market expectations  
+4. **Ensemble Model** – Regime-aware stacking of the structured models  
+5. **Auxiliary Gradient Boosting** – HistGradientBoostingRegressor that captures residual non-linearities; its predictions feed the ensemble but are never used as a stand-alone forecast.
 
 ---
 
@@ -1170,6 +1184,9 @@ We evaluated models across 5 criteria critical for this project:
 - Complex non-linear interactions
 - Less need for interpretation
 - **Not your use case**
+
+**How we still leverage trees**  
+We train a small **HistGradientBoostingRegressor** with strong regularization (shallow depth, low learning rate, minimum leaf size) to pick up residual non-linearities after the structured models. Its predictions feed the ensemble’s ridge-based weighting layer, giving us the benefits of non-linear modeling without surrendering interpretability or overfitting control.
 
 ---
 
@@ -1519,28 +1536,31 @@ Term_Structure_Signal = α * (RBOB_Nov - RBOB_Dec)  # Backwardation premium
 
 ### Model 4: Regime-Weighted Ensemble
 
-**Core Hypothesis**: Different models perform better in different market conditions
+**Core Hypothesis**: Different models perform better in different market conditions, so weights should adapt to regime signals.
 
-**Specification**:
+**Specification (2025 refresh)**:
 ```python
-Forecast_Ensemble = w₁*Model1 + w₂*Model2 + w₃*Model3
+# Base learners
+M1 = pass_through.predict(...)
+M2 = inventory_residual.predict(...)
+M3 = futures_curve.predict(...)
+M4 = gradient_boosting.predict(...)
 
-where weights depend on regime:
+# Ridge regression learns weights using October history
+# Separate coefficients for normal vs crisis (geopolitical_shock = 1)
+weights_normal = Ridge(alpha=0.1).fit(X_normal, y_normal)
+weights_crisis = Ridge(alpha=0.1).fit(X_crisis, y_crisis)
 
-Normal Regime (Days_Supply > 26, No Hurricane):
-  w = [0.70, 0.15, 0.15]  # Emphasize pass-through
-
-Tight Regime (Days_Supply ∈ [23, 26]):
-  w = [0.50, 0.35, 0.15]  # Emphasize inventory model
-
-Crisis Regime (Days_Supply < 23 OR Active Hurricane):
-  w = [0.40, 0.40, 0.20]  # Balance fundamentals & market
+if geopolitical_shock == 1:
+    forecast = weights_crisis.intercept_ + weights_crisis.coef_ @ [M1, M2, M3, M4]
+else:
+    forecast = weights_normal.intercept_ + weights_normal.coef_ @ [M1, M2, M3, M4]
 ```
 
 **Why This Works**:
-- Pass-through dominates in normal markets (predictable transmission)
-- Inventory signals matter more when supply is tight
-- Avoids overfitting (uses simple average within regime, not optimized weights)
+- Preserves interpretability (weights are linear and reportable)
+- Allows the gradient-boost learner to contribute when it adds value, without overpowering the structured models
+- Explicitly distinguishes high-volatility regimes (storms, war shocks) from normal conditions
 
 **Expected Performance**: Robust across regimes, reduces tail risk
 

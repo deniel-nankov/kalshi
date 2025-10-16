@@ -6,31 +6,14 @@ Usage:
 
 Expected inputs (Silver layer):
     - rbob_daily.parquet
-    - wt    # === PRICE & MARKET STRUCTURE FEATURES ===
-    gold["crack_spread"] = gold["price_rbob"] - gold["price_wti"]
-    gold["retail_margin"] = gold["retail_price"] - gold["price_rbob"]
-    
-    # NEW: Futures Basis (for Model 3 - Futures-Based model)
-    # Basis = Retail Price - RBOB Futures Price
-    # Captures the local retail premium over wholesale futures
-    # Positive basis = retail trading above futures (normal)
-    # Negative basis = retail trading below futures (anomaly)
-    gold["basis"] = gold["retail_price"] - gold["price_rbob"]
-    
-    # Lagged basis (SAFE - uses past values only, no leakage)
-    gold["basis_lag7"] = gold["basis"].shift(7)
-    gold["basis_lag14"] = gold["basis"].shift(14)
-    
-    # Lagged retail margin (SAFE - uses past values only, no leakage)
-    gold["retail_margin_lag7"] = gold["retail_margin"].shift(7)
-    gold["retail_margin_lag14"] = gold["retail_margin"].shift(14).parquet
+    - wti_daily.parquet
     - retail_prices_daily.parquet
     - eia_inventory_weekly.parquet
     - eia_utilization_weekly.parquet
-    - eia_imports_weekly.parquet             (optional but recommended)
-    - padd3_share_weekly.parquet             (optional)
-    - noaa_temp_daily.parquet                (optional)
-    - hurricane_risk_october.csv             (optional)
+    - eia_imports_weekly.parquet (optional)
+    - padd3_share_weekly.parquet (optional)
+    - noaa_temp_daily.parquet (optional)
+    - hurricane_risk_october.csv (optional)
 
 Outputs (Gold layer):
     - master_daily.parquet       # Daily panel with engineered features (21+ features)
@@ -204,17 +187,33 @@ def build_gold_dataset() -> pd.DataFrame:
     # Lagged basis (SAFE - uses past values only, no leakage)
     gold["basis_lag7"] = gold["basis"].shift(7)
     gold["basis_lag14"] = gold["basis"].shift(14)
+    gold["basis_lag21"] = gold["basis"].shift(21)
     
     # Lagged retail margin (SAFE - uses past values only, no leakage)
     gold["retail_margin_lag7"] = gold["retail_margin"].shift(7)
     gold["retail_margin_lag14"] = gold["retail_margin"].shift(14)
-    
+    gold["retail_margin_lag21"] = gold["retail_margin"].shift(21)
+
     gold["rbob_lag3"] = gold["price_rbob"].shift(3)
     gold["rbob_lag7"] = gold["price_rbob"].shift(7)
     gold["rbob_lag14"] = gold["price_rbob"].shift(14)
+    gold["rbob_lag21"] = gold["price_rbob"].shift(21)
     gold["delta_rbob_1w"] = gold["price_rbob"] - gold["price_rbob"].shift(7)
+    gold["delta_rbob_3w"] = gold["price_rbob"] - gold["price_rbob"].shift(21)
     gold["rbob_return_1d"] = gold["price_rbob"].pct_change()
     gold["vol_rbob_10d"] = gold["rbob_return_1d"].rolling(10).std()
+    gold["vol_rbob_21d"] = gold["rbob_return_1d"].rolling(21).std()
+    gold["price_rbob_ma21"] = gold["price_rbob"].rolling(window=21, min_periods=1).mean()
+    gold["crack_spread_ma21"] = gold["crack_spread"].rolling(window=21, min_periods=1).mean()
+    gold["crack_spread_change_3w"] = gold["crack_spread"] - gold["crack_spread"].shift(21)
+    gold["basis_trend_3w"] = gold["basis"] - gold["basis_lag21"]
+
+    gold["retail_price_lag7"] = gold["retail_price"].shift(7)
+    gold["retail_price_lag14"] = gold["retail_price"].shift(14)
+    gold["retail_price_lag21"] = gold["retail_price"].shift(21)
+    gold["retail_price_change_3w"] = gold["retail_price"] - gold["retail_price"].shift(21)
+    gold["retail_price_ma21"] = gold["retail_price"].rolling(window=21, min_periods=1).mean()
+    gold["retail_price_trend_3w"] = gold["retail_price_change_3w"] / 21.0
     
     # NEW: RBOB Momentum (percentage change over 7 days)
     # Captures velocity of price changes, not just position
@@ -292,6 +291,9 @@ def build_gold_dataset() -> pd.DataFrame:
     oct1_dates = pd.to_datetime(gold.index.year.astype(str) + "-10-01")
     delta_days = pd.Series((gold.index - oct1_dates).days, index=gold.index)
     gold["days_since_oct1"] = delta_days.clip(lower=0)
+    gold["geopolitical_shock"] = (
+        (gold.index >= pd.Timestamp("2022-02-24")) & (gold.index <= pd.Timestamp("2022-12-31"))
+    ).astype(int)
 
     gold["target"] = gold["retail_price"]
 
@@ -324,17 +326,33 @@ def save_outputs(gold: pd.DataFrame) -> None:
         "retail_price",
         "crack_spread",
         "retail_margin",
+        "retail_margin_lag7",   # NEW: lagged retail margin (safe)
+        "retail_margin_lag14",  # NEW: lagged retail margin (safe)
+        "retail_margin_lag21",  # NEW: lagged retail margin (safe)
         "basis",                # NEW: futures basis (safe)
         "basis_lag7",           # NEW: lagged basis (safe)
         "basis_lag14",          # NEW: lagged basis (safe)
-        "retail_margin_lag7",   # NEW: lagged retail margin (safe)
-        "retail_margin_lag14",  # NEW: lagged retail margin (safe)
+        "basis_lag21",
+        "basis_trend_3w",
         "rbob_lag3",
         "rbob_lag7",
         "rbob_lag14",
+        "rbob_lag21",
         "delta_rbob_1w",
+        "delta_rbob_3w",
         "vol_rbob_10d",
+        "vol_rbob_21d",
+        "price_rbob_ma21",
+        "crack_spread_ma21",
+        "crack_spread_change_3w",
         "rbob_momentum_7d",
+        "retail_price_lag7",
+        "retail_price_lag14",
+        "retail_price_lag21",
+        "retail_price_change_3w",
+        "retail_price_ma21",
+        "retail_price_trend_3w",
+        "geopolitical_shock",
     ]
     
     # Add optional features if they exist

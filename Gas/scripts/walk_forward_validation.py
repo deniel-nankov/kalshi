@@ -25,18 +25,10 @@ from models.baseline_models import (  # noqa: E402
     COMMON_FEATURES,
     compute_metrics,
     load_model_ready_dataset,
+    prepare_forecast_frame,
     ridge_time_series_cv,
     train_ridge_model,
 )
-
-
-def create_horizon_dataset(df: pd.DataFrame, horizon: int) -> pd.DataFrame:
-    df_sorted = df.sort_values("date").copy()
-    target_col = f"target_h{horizon}"
-    df_sorted[target_col] = df_sorted["retail_price"].shift(-horizon)
-    df_sorted["target_date"] = df_sorted["date"] + pd.Timedelta(days=horizon)
-    df_h = df_sorted.dropna(subset=[target_col]).reset_index(drop=True)
-    return df_h
 
 
 def walk_forward_forecasts(
@@ -50,8 +42,8 @@ def walk_forward_forecasts(
     prediction_records = []
 
     for horizon in horizons:
-        df_h = create_horizon_dataset(df, horizon)
-        target_col = f"target_h{horizon}"
+        df_h = prepare_forecast_frame(df, horizon)
+        target_col = "target"
         horizon_dir = output_dir / f"horizon_{horizon}"
         horizon_dir.mkdir(parents=True, exist_ok=True)
 

@@ -47,6 +47,12 @@ def parse_args() -> argparse.Namespace:
         default=Path(__file__).resolve().parents[1] / "outputs" / "models",
         help="Directory to save model artefacts (default: outputs/models)",
     )
+    parser.add_argument(
+        "--horizon",
+        type=int,
+        default=0,
+        help="Forecast horizon in days (0 = nowcast). Use 21 for Oct 31 target.",
+    )
     return parser.parse_args()
 
 
@@ -56,7 +62,13 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Loaded dataset with {len(df):,} rows spanning {df['date'].min():%Y-%m-%d} → {df['date'].max():%Y-%m-%d}")
-    results = train_all_models(df, output_dir=args.output_dir, test_start=args.test_start)
+    print(f"Training horizon: {args.horizon} day(s) ahead")
+    results = train_all_models(
+        df,
+        output_dir=args.output_dir,
+        test_start=args.test_start,
+        horizon=args.horizon,
+    )
 
     summary_records = []
     for name, output in results.items():
@@ -73,6 +85,8 @@ def main() -> None:
         }
         if "best_alpha" in output.metrics:
             metrics_row["best_alpha"] = output.metrics["best_alpha"]
+        if "horizon_days" in output.metrics:
+            metrics_row["horizon_days"] = output.metrics["horizon_days"]
         summary_records.append(metrics_row)
 
     summary_df = pd.DataFrame(summary_records)

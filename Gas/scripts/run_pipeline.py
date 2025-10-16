@@ -34,6 +34,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run full gasoline forecasting pipeline")
     parser.add_argument("--skip-walkforward", action="store_true", help="Skip walk-forward validation step")
     parser.add_argument("--skip-freshness", action="store_true", help="Skip data freshness dashboard")
+    parser.add_argument(
+        "--horizon",
+        type=int,
+        default=0,
+        help="Forecast horizon (in days) passed to train_models.py (default: 0).",
+    )
     return parser.parse_args()
 
 
@@ -44,7 +50,15 @@ def main() -> None:
     steps = [
         ("Build Gold Layer", [python, str(SCRIPT_DIR / "build_gold_layer.py")]),
         ("Validate Gold Layer", [python, str(SCRIPT_DIR / "validate_gold_layer.py")]),
-        ("Train Baseline Models", [python, str(SCRIPT_DIR / "train_models.py")]),
+        (
+            "Train Baseline Models",
+            [
+                python,
+                str(SCRIPT_DIR / "train_models.py"),
+                "--horizon",
+                str(args.horizon),
+            ],
+        ),
     ]
 
     if not args.skip_walkforward:

@@ -20,7 +20,7 @@ from typing import Optional
 import pandas as pd
 import yfinance as yf
 
-BRONZE_DIR = Path(__file__).resolve().parents[1] / "data" / "bronze"
+BRONZE_DIR = Path(__file__).resolve().parents[2] / "data" / "bronze"
 
 
 def _download_futures_bronze(

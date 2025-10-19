@@ -25,13 +25,11 @@ from process_hurricane_risk_october import (  # type: ignore  # noqa: E402
 def test_prepare_temperature_features_computes_anomalies():
     dates = pd.date_range("2024-01-01", periods=40, freq="D")
     temps = np.linspace(20, 30, 40)  # gradual warming
-    df = pd.DataFrame(
-        {
-            "date": np.repeat(dates, 2),
-            "station": ["A", "B"] * 40,
-            "temp_c": np.tile(temps, 2),
-        }
-    )
+    df = pd.DataFrame({
+        "date": np.repeat(dates, 2),
+        "station": ["A", "A"] * 40,
+        "temp_c": np.tile(temps, 2),
+    })
 
     result = prepare_temperature_features(df)
     assert set(

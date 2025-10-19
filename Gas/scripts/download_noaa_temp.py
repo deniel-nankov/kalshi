@@ -20,13 +20,12 @@ NOAA_END      : End date in YYYY-MM-DD   (default: today)
 from __future__ import annotations
 
 import logging
-import math
 import os
 import time
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -34,8 +33,10 @@ import requests
 
 BASE_URL = "https://www.ncdc.noaa.gov/cdo-web/api/v2/data"
 DEFAULT_STATIONS = [
-    "GHCND:USW00012918",  # Houston, TX
-    "GHCND:USW00093937",  # New Orleans, LA
+    "GHCND:USW00012918",  # Houston (IAH)
+    "GHCND:USW00012924",  # Corpus Christi International
+    "GHCND:USW00012946",  # Beaumont/Port Arthur
+    "GHCND:USW00012917",  # Lake Charles Regional
 ]
 DEFAULT_START = "2020-01-01"
 DEFAULT_END = date.today().isoformat()
@@ -43,7 +44,10 @@ REQUEST_LIMIT = 1000  # NOAA API maximum per request
 ROLLING_WINDOW_DAYS = 365
 ROLLING_MIN_PERIODS = 30  # ensure early periods still have values
 
-SILVER_DIR = Path(__file__).resolve().parents[2] / "data" / "silver"
+ROOT_DIR = Path(__file__).resolve().parents[1]
+BRONZE_DIR = ROOT_DIR / "data" / "bronze"
+SILVER_DIR = ROOT_DIR / "data" / "silver"
+BRONZE_PATH = BRONZE_DIR / "noaa_temp_raw.parquet"
 SILVER_PATH = SILVER_DIR / "noaa_temp_daily.parquet"
 
 logger = logging.getLogger("download_noaa_temp")
@@ -82,50 +86,153 @@ def fetch_station_temperature(
     headers = {"token": token}
     params = {
         "datasetid": "GHCND",
-        "datatypeid": "TAVG",
+        "datatypeid": ["TAVG", "TMAX", "TMIN"],
         "stationid": config.station_id,
         "startdate": config.start_date,
         "enddate": config.end_date,
         "units": "metric",
         "limit": REQUEST_LIMIT,
-        "offset": 1,
         "sortfield": "date",
         "sortorder": "asc",
     }
 
     records: list[dict] = []
-    while True:
-        response = session.get(BASE_URL, params=params, headers=headers, timeout=30)
-        response.raise_for_status()
-        payload = response.json()
-        results = payload.get("results", [])
-        if not results:
-            break
+    max_attempts = int(os.getenv("NOAA_MAX_RETRIES", "10"))
+    for start, end in _generate_daily_chunks(config.start_date, config.end_date):
+        params["startdate"] = start
+        params["enddate"] = end
+        params["offset"] = 1
 
-        records.extend(results)
+        while True:
+            attempt = 0
+            while attempt < max_attempts:
+                attempt += 1
+                try:
+                    response = session.get(
+                        BASE_URL,
+                        params=_encode_params(params),
+                        headers=headers,
+                        timeout=60,
+                    )
+                except requests.exceptions.ReadTimeout:
+                    logger.warning(
+                        "NOAA request timeout for %s (%s-%s) attempt %d/%d",
+                        config.station_id,
+                        start,
+                        end,
+                        attempt,
+                        max_attempts,
+                    )
+                    time.sleep(2 ** attempt)
+                    continue
 
-        # pagination
-        if len(results) < REQUEST_LIMIT:
-            break
-        params["offset"] += REQUEST_LIMIT
-        time.sleep(0.2)  # friendly throttling
+                if response.status_code in (502, 503, 504):
+                    logger.warning(
+                        "NOAA service unavailable (%s) for %s (%s-%s) attempt %d/%d",
+                        response.status_code,
+                        config.station_id,
+                        start,
+                        end,
+                        attempt,
+                        max_attempts,
+                    )
+                    time.sleep(2 ** attempt)
+                    continue
+
+                if response.status_code >= 400:
+                    body = response.text.strip()
+                    if response.status_code == 400 and "no data" in body.lower():
+                        logger.info(
+                            "No NOAA temperature data for %s between %s and %s",
+                            config.station_id,
+                            start,
+                            end,
+                        )
+                        results = []
+                    else:
+                        logger.error(
+                            "NOAA request failed (%s %s) for %s (%s-%s). Response: %s",
+                            response.status_code,
+                            response.reason,
+                            config.station_id,
+                            start,
+                            end,
+                            body,
+                        )
+                        response.raise_for_status()
+                else:
+                    payload = response.json()
+                    results = payload.get("results", [])
+                break
+            else:
+                logger.error(
+                    "NOAA temperature request failed after retries for %s (%s-%s); skipping chunk",
+                    config.station_id,
+                    start,
+                    end,
+                )
+                results = []
+
+            if not results:
+                break
+
+            records.extend(results)
+
+            if len(results) < REQUEST_LIMIT:
+                break
+            params["offset"] += REQUEST_LIMIT
+            time.sleep(0.2)
+    if not records:
+        logger.warning("No temperature observations returned for station %s", config.station_id)
+        return pd.DataFrame(columns=["date", "datatype", "station", "value", "attributes"])
 
     df = pd.DataFrame(records)
-    if df.empty:
-        logger.warning("No temperature observations returned for station %s", config.station_id)
+    df["station"] = config.station_id
+    return df[["date", "datatype", "station", "value", "attributes"]]
+
+
+def transform_raw_temperature(raw_df: pd.DataFrame) -> pd.DataFrame:
+    if raw_df.empty:
         return pd.DataFrame(columns=["date", "station", "temp_c"])
 
-    # NOAA GHCND TAVG values are tenths of °C when units=metric
-    if "value" not in df.columns:
-        raise ValueError(f"'value' column missing for station {config.station_id}")
+    raw_df = raw_df.copy()
+    raw_df["value"] = pd.to_numeric(raw_df["value"], errors="coerce")
+    raw_df["date"] = pd.to_datetime(raw_df["date"]).dt.tz_localize(None)
+    raw_df = raw_df.dropna(subset=["date", "value", "datatype"])
 
-    df = df.rename(columns={"value": "temp_tenths_c"})
-    df["temp_c"] = pd.to_numeric(df["temp_tenths_c"], errors="coerce") / 10.0
-    df["date"] = pd.to_datetime(df["date"]).dt.tz_localize(None)
-    df["station"] = config.station_id
+    frames: List[pd.DataFrame] = []
+    for station_id, station_df in raw_df.groupby("station"):
+        pivot = (
+            station_df.pivot_table(index="date", columns="datatype", values="value", aggfunc="first")
+            .sort_index()
+            .reset_index()
+        )
 
-    df = df.dropna(subset=["date", "temp_c"]).sort_values("date")
-    return df[["date", "station", "temp_c"]]
+        if {"TMAX", "TMIN"}.issubset(pivot.columns):
+            pivot["TAVG_COMPUTED"] = (pivot["TMAX"] + pivot["TMIN"]) / 2.0
+
+        if "TAVG" in pivot.columns:
+            temp_tenths = pivot["TAVG"].fillna(pivot.get("TAVG_COMPUTED"))
+        else:
+            temp_tenths = pivot.get("TAVG_COMPUTED")
+
+        if temp_tenths is None:
+            logger.warning("No usable temperature records for station %s", station_id)
+            continue
+
+        temp_c = temp_tenths / 10.0
+        out = pd.DataFrame({
+            "date": pivot["date"],
+            "station": station_id,
+            "temp_c": temp_c,
+        })
+        out = out.dropna(subset=["date", "temp_c"]).sort_values("date")
+        frames.append(out)
+
+    if not frames:
+        return pd.DataFrame(columns=["date", "station", "temp_c"])
+
+    return pd.concat(frames, ignore_index=True)
 
 
 def prepare_temperature_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -189,18 +296,44 @@ def main() -> None:
     logger.info("Downloading NOAA temperature data for stations: %s", ", ".join(stations))
     logger.info("Date range: %s → %s", start_date, end_date)
 
-    frames = []
+    raw_frames = []
     session = requests.Session()
     for station in stations:
         config = StationConfig(station_id=station, start_date=start_date, end_date=end_date)
-        frames.append(fetch_station_temperature(config, token=token, session=session))
+        raw_frames.append(fetch_station_temperature(config, token=token, session=session))
 
-    combined = pd.concat(frames, ignore_index=True)
-    if combined.empty:
+    combined_raw = pd.concat(raw_frames, ignore_index=True)
+    if combined_raw.empty:
         raise RuntimeError("No temperature observations retrieved for the configured stations.")
 
-    features = prepare_temperature_features(combined)
+    BRONZE_DIR.mkdir(parents=True, exist_ok=True)
+    combined_raw.to_parquet(BRONZE_PATH, index=False)
+    logger.info("✓ Saved raw temperature observations to %s (%d rows)", BRONZE_PATH, len(combined_raw))
+
+    station_daily = transform_raw_temperature(combined_raw)
+    features = prepare_temperature_features(station_daily)
     save_temperature_dataset(features)
+
+
+def _encode_params(params: dict) -> dict:
+    encoded = {}
+    for key, value in params.items():
+        if isinstance(value, list):
+            encoded[key] = value
+        else:
+            encoded[key] = value
+    return encoded
+
+
+def _generate_daily_chunks(start: str, end: str) -> Iterable[Tuple[str, str]]:
+    start_dt = datetime.fromisoformat(start)
+    end_dt = datetime.fromisoformat(end)
+
+    current_start = start_dt
+    while current_start <= end_dt:
+        current_end = min(current_start + timedelta(days=364), end_dt)
+        yield current_start.date().isoformat(), current_end.date().isoformat()
+        current_start = current_end + timedelta(days=1)
 
 
 if __name__ == "__main__":

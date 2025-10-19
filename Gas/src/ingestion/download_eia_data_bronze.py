@@ -21,7 +21,7 @@ import pandas as pd
 # Use absolute import for script execution
 from ingestion.eia_client import EIAClient, EIAClientError, default_params
 
-BRONZE_DIR = Path(__file__).resolve().parents[1] / "data" / "bronze"
+BRONZE_DIR = Path(__file__).resolve().parents[2] / "data" / "bronze"
 
 
 def fetch_inventory_bronze(client: Optional[EIAClient] = None) -> pd.DataFrame:

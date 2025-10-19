@@ -136,13 +136,26 @@ def build_gold_dataset() -> pd.DataFrame:
     padd3 = _load_parquet("padd3_share_weekly.parquet", required=False)
     temps = _load_parquet("noaa_temp_daily.parquet", required=False)
 
-    hurricane_path = SILVER_DIR / "hurricane_risk_october.csv"
+    # Load enhanced hurricane features (Aug-Oct, 2005-2025, with geographic data)
+    hurricane_path = SILVER_DIR / "hurricane_risk_features.csv"
     hurricanes = None
     if hurricane_path.exists():
         hurricanes = pd.read_csv(hurricane_path)
         hurricanes["date"] = pd.to_datetime(hurricanes["date"])
+        print(f"✓ Loaded enhanced hurricane features: {len(hurricanes)} rows, {len(hurricanes.columns)} columns")
     else:
         print(f"⚪ Optional hurricane file not found: {hurricane_path}")
+
+    # Load Phase 2 external data (SPR, macroeconomic, OPEC, refinery outages)
+    external_data_path = Path(__file__).resolve().parents[1] / "data" / "external" / "external_data_merged.csv"
+    external_data = None
+    if external_data_path.exists():
+        external_data = pd.read_csv(external_data_path)
+        external_data["date"] = pd.to_datetime(external_data["date"])
+        print(f"✓ Loaded Phase 2 external data: {len(external_data)} rows, {len(external_data.columns)} columns")
+    else:
+        print(f"⚪ Phase 2 external data not found: {external_data_path}")
+        print(f"   Run: python scripts/fetch_external_data.py")
 
     calendar = _prepare_calendar(rbob, retail)
 
@@ -166,6 +179,66 @@ def build_gold_dataset() -> pd.DataFrame:
 
     if hurricanes is not None:
         gold = gold.merge(hurricanes, on="date", how="left", suffixes=("", ""))
+        # Fill NaN values for hurricane features (dates outside Aug-Oct hurricane season)
+        hurricane_numeric_cols = [
+            "hurricane_risk_score", "hurricane_probability", "hurricane_intensity",
+            "max_wind_mph", "hurricane_category", "hurricane_risk_7d_avg",
+            "padd3_threat_level", "padd3_threat_14d_max", "refineries_at_risk_count",
+            "refining_capacity_threatened_bpd", "refining_capacity_threatened_30d_cumsum",
+            "estimated_shutdown_days", "historical_gas_price_impact_pct",
+            "distance_to_houston_mi", "distance_to_lake_charles_mi", "distance_to_nearest_refinery_mi",
+        ]
+        
+        for col in hurricane_numeric_cols:
+            if col in gold.columns:
+                # Base risk features: fill with 0 (no risk outside hurricane season)
+                if col in ["hurricane_risk_score", "hurricane_probability", "hurricane_risk_7d_avg"]:
+                    gold[col] = gold[col].fillna(0.0)
+                # Lagged/cumulative features: forward fill then backfill
+                elif col in ["days_since_last_hurricane", "padd3_threat_14d_max", "refining_capacity_threatened_30d_cumsum"]:
+                    gold[col] = gold[col].fillna(method='ffill').fillna(730)  # 2 years max
+                # Geographic/threat features: fill with None equivalent
+                else:
+                    gold[col] = gold[col].fillna(0.0)
+        
+        # Binary/categorical features
+        binary_cols = ["is_hurricane_event", "is_gulf_coast_landfall"]
+        for col in binary_cols:
+            if col in gold.columns:
+                gold[col] = gold[col].fillna(0)
+        
+        # String features
+        if "hurricane_name" in gold.columns:
+            gold["hurricane_name"] = gold["hurricane_name"].fillna("None")
+        if "refinery_impact_level" in gold.columns:
+            gold["refinery_impact_level"] = gold["refinery_impact_level"].fillna("none")
+        
+        # Lagged features that need special handling
+        if "days_since_last_hurricane" in gold.columns:
+            gold["days_since_last_hurricane"] = gold["days_since_last_hurricane"].fillna(730)
+        if "days_until_next_hurricane" in gold.columns:
+            gold["days_until_next_hurricane"] = gold["days_until_next_hurricane"].fillna(365)
+
+    # Merge Phase 2 external data features
+    if external_data is not None:
+        gold = gold.merge(external_data, on="date", how="left", suffixes=("", ""))
+        
+        # Forward fill external data (weekly/monthly → daily)
+        external_cols = [
+            "spr_stocks_mb", "spr_release_mb_d",
+            "unemployment_rate", "vehicle_miles_traveled", "consumer_sentiment",
+            "opec_production_cut_mb_d", "middle_east_tension_score",
+            "iran_sanctions_indicator", "venezuela_sanctions_indicator",
+            "refinery_outage_capacity_bpd", "scheduled_maintenance_capacity_bpd",
+            "total_outage_capacity_bpd"
+        ]
+        
+        for col in external_cols:
+            if col in gold.columns:
+                gold[col] = gold[col].fillna(method='ffill').fillna(method='bfill')
+        
+        print(f"✓ Merged Phase 2 external features: {len([c for c in external_cols if c in gold.columns])} columns")
+
 
     gold = gold.sort_values("date").set_index("date")
 
@@ -294,6 +367,76 @@ def build_gold_dataset() -> pd.DataFrame:
     gold["geopolitical_shock"] = (
         (gold.index >= pd.Timestamp("2022-02-24")) & (gold.index <= pd.Timestamp("2022-12-31"))
     ).astype(int)
+    
+    # === TIER 1 ENHANCED SEASONALITY FEATURES ===
+    # Holiday weeks (major US holidays that affect driving/gas consumption)
+    # Memorial Day (last Monday of May), July 4th, Labor Day (first Monday of September), Thanksgiving (4th Thursday of November)
+    gold["is_holiday_week"] = 0
+    for year in gold.index.year.unique():
+        # Memorial Day week (last week of May)
+        memorial_day_week_start = pd.Timestamp(f"{year}-05-24")
+        memorial_day_week_end = pd.Timestamp(f"{year}-05-31")
+        # July 4th week
+        july4_week_start = pd.Timestamp(f"{year}-07-01")
+        july4_week_end = pd.Timestamp(f"{year}-07-07")
+        # Labor Day week (first week of September)
+        labor_day_week_start = pd.Timestamp(f"{year}-09-01")
+        labor_day_week_end = pd.Timestamp(f"{year}-09-07")
+        # Thanksgiving week (3rd week of November - simplified)
+        thanksgiving_week_start = pd.Timestamp(f"{year}-11-20")
+        thanksgiving_week_end = pd.Timestamp(f"{year}-11-27")
+        
+        holiday_mask = (
+            ((gold.index >= memorial_day_week_start) & (gold.index <= memorial_day_week_end)) |
+            ((gold.index >= july4_week_start) & (gold.index <= july4_week_end)) |
+            ((gold.index >= labor_day_week_start) & (gold.index <= labor_day_week_end)) |
+            ((gold.index >= thanksgiving_week_start) & (gold.index <= thanksgiving_week_end))
+        )
+        gold.loc[holiday_mask, "is_holiday_week"] = 1
+    
+    # October sub-periods (for October-specific markets)
+    # Early October (1-10): Highest demand, summer blend still common
+    # Mid October (11-20): Transition period
+    # Late October (21-31): Lower demand, winter blend prevalent
+    gold["is_early_october"] = ((gold.index.month == 10) & (gold.index.day <= 10)).astype(int)
+    gold["is_mid_october"] = ((gold.index.month == 10) & (gold.index.day > 10) & (gold.index.day <= 20)).astype(int)
+    gold["is_late_october"] = ((gold.index.month == 10) & (gold.index.day > 20)).astype(int)
+    
+    # Days until winter blend switch (November 1)
+    # Positive = days until switch, Negative = days after switch
+    nov1_dates = pd.to_datetime(gold.index.year.astype(str) + "-11-01")
+    gold["days_until_winter_blend_switch"] = (nov1_dates - gold.index).days
+    
+    # === TIER 1 INTERACTION FEATURES ===
+    # Crack spread × Inventory (profitability meets availability)
+    # High crack spread + low inventory = extreme price pressure
+    if "inventory_mbbl" in gold.columns:
+        gold["crack_spread_x_inventory"] = gold["crack_spread"] * gold["inventory_mbbl"]
+    
+    # Utilization × Hurricane threat (constrained supply meets disruption risk)
+    if "utilization_pct" in gold.columns and "padd3_threat_level" in gold.columns:
+        gold["utilization_x_hurricane_threat"] = gold["utilization_pct"] * gold["padd3_threat_level"]
+    
+    # Inventory threshold indicators (binary features for extreme conditions)
+    if "inventory_mbbl" in gold.columns:
+        # Below 5-year minimum (critical shortage)
+        inventory_5yr_min = gold["inventory_mbbl"].rolling(window=365*5, min_periods=365).min()
+        gold["inventory_below_5yr_min"] = (gold["inventory_mbbl"] < inventory_5yr_min).astype(int)
+    
+    # Utilization above 95% (capacity constraint)
+    if "utilization_pct" in gold.columns:
+        gold["utilization_above_95pct"] = (gold["utilization_pct"] > 95).astype(int)
+    
+    # === TIER 1 MARKET MICROSTRUCTURE FEATURES ===
+    # Volume moving average (liquidity trend)
+    if "volume_rbob" in gold.columns:
+        gold["rbob_volume_ma21"] = gold["volume_rbob"].rolling(window=21, min_periods=1).mean()
+    
+    # Volatility regime (high vs low volatility periods)
+    # Using 21-day volatility, compare to 6-month rolling median
+    if "vol_rbob_21d" in gold.columns:
+        vol_median_6m = gold["vol_rbob_21d"].rolling(window=126, min_periods=30).median()
+        gold["volatility_regime_indicator"] = (gold["vol_rbob_21d"] > vol_median_6m).astype(int)
 
     gold["target"] = gold["retail_price"]
 

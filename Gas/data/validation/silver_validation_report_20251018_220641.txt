@@ -1,0 +1,46 @@
+============================================================
+SILVER LAYER VALIDATION REPORT
+Generated: 2025-10-18 22:06:41
+============================================================
+
+📅 DATE COVERAGE:
+  Start: 2024-10-24
+  End: 2025-10-18
+  Total days: 360
+  Days with articles: 352 (97.8%)
+  Days with 0 articles: 8
+
+📰 ARTICLE STATISTICS:
+  Total articles: 4375
+  Avg per day: 12.2
+  Median per day: 10
+  Min per day: 0
+  Max per day: 116
+
+💭 SENTIMENT STATISTICS:
+  Mean: 0.105
+  Std: 0.115
+  Min: -0.454
+  Max: 0.711
+  25th percentile: 0.041
+  75th percentile: 0.161
+
+🎯 CONFIDENCE STATISTICS:
+  Mean: 0.182
+  Min: 0.000
+  Max: 0.581
+
+📊 SENTIMENT DISTRIBUTION:
+  Very Positive (>0.2): 56 (15.6%)
+  Positive (0.05-0.2): 200 (55.6%)
+  Neutral (-0.05 to 0.05): 90 (25.0%)
+  Negative (-0.2 to -0.05): 10 (2.8%)
+  Very Negative (<-0.2): 4 (1.1%)
+
+✅ QUALITY CHECKS:
+  ✅ No future dates
+  ✅ Sentiment scores in valid range [-1, +1]
+  ✅ Mean sentiment near neutral (reasonable)
+  ✅ Excellent coverage (97.8%)
+
+============================================================

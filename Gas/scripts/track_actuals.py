@@ -15,12 +15,13 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import requests
 from dotenv import load_dotenv
+import time
 
 load_dotenv('/Users/denielnankov/Documents/kalshi/.env')
 
-def fetch_eia_prices(start_date, end_date):
+def fetch_eia_prices(start_date, end_date, max_retries=5):
     """
-    Fetch actual gas prices from EIA API
+    Fetch actual gas prices from EIA API with retry logic
     
     Parameters:
     -----------
@@ -28,6 +29,8 @@ def fetch_eia_prices(start_date, end_date):
         Start date (YYYY-MM-DD)
     end_date : str or date
         End date (YYYY-MM-DD)
+    max_retries : int, default=5
+        Maximum number of retry attempts
         
     Returns:
     --------
@@ -56,39 +59,57 @@ def fetch_eia_prices(start_date, end_date):
         'sort[0][direction]': 'asc'
     }
     
-    try:
-        response = requests.get(url, params=params, timeout=10)
-        
-        if response.status_code != 200:
-            print(f"   ❌ EIA API error: {response.status_code}")
-            return None
-        
-        data = response.json()
-        
-        if 'response' not in data or 'data' not in data['response']:
-            print(f"   ❌ No data in response")
-            return None
-        
-        records = data['response']['data']
-        
-        if not records:
-            print(f"   ⚠️ No data available for date range")
-            return None
-        
-        # Convert to DataFrame
-        df = pd.DataFrame(records)
-        df['date'] = pd.to_datetime(df['period'])
-        df = df.rename(columns={'value': 'retail_price'})
-        df = df[['date', 'retail_price']].sort_values('date')
-        
-        print(f"   ✅ Fetched {len(df)} price records")
-        print(f"   Latest: {df['date'].max().date()} = ${df['retail_price'].iloc[-1]:.3f}")
-        
-        return df
-        
-    except Exception as e:
-        print(f"   ❌ Error fetching EIA data: {str(e)}")
-        return None
+    # Retry loop with exponential backoff
+    for attempt in range(1, max_retries + 1):
+        try:
+            if attempt > 1:
+                # Exponential backoff: 2, 4, 8, 16 seconds
+                wait_time = 2 ** (attempt - 1)
+                print(f"   ⏳ Retry {attempt}/{max_retries} after {wait_time}s...")
+                time.sleep(wait_time)
+            
+            response = requests.get(url, params=params, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if 'response' in data and 'data' in data['response']:
+                    records = data['response']['data']
+                    
+                    if records:
+                        # Success! Convert to DataFrame
+                        df = pd.DataFrame(records)
+                        df['date'] = pd.to_datetime(df['period'])
+                        df = df.rename(columns={'value': 'retail_price'})
+                        df = df[['date', 'retail_price']].sort_values('date')
+                        
+                        success_msg = f"   ✅ Fetched {len(df)} price records"
+                        if attempt > 1:
+                            success_msg += f" (succeeded on attempt {attempt})"
+                        print(success_msg)
+                        print(f"   Latest: {df['date'].max().date()} = ${df['retail_price'].iloc[-1]:.3f}")
+                        
+                        return df
+                    else:
+                        # No data available for date range (not an error, data just not published yet)
+                        print(f"   ⚠️ No data available for date range")
+                        return None
+                else:
+                    print(f"   ⚠️ Attempt {attempt}: No data in response")
+            else:
+                print(f"   ⚠️ Attempt {attempt}: EIA API returned status {response.status_code}")
+                
+        except requests.exceptions.Timeout:
+            print(f"   ⚠️ Attempt {attempt}: Request timeout")
+        except requests.exceptions.ConnectionError:
+            print(f"   ⚠️ Attempt {attempt}: Connection error")
+        except Exception as e:
+            print(f"   ⚠️ Attempt {attempt}: {str(e)[:50]}")
+    
+    # All retries failed
+    print(f"   ❌ Failed after {max_retries} attempts")
+    print(f"   This is usually because data hasn't been published yet (1-2 day lag)")
+    return None
 
 def validate_predictions():
     """

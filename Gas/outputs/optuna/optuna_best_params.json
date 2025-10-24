@@ -1,0 +1,16 @@
+{
+  "ridge": {
+    "alpha": 0.001010922639311848,
+    "best_r2": 0.99999252237953
+  },
+  "gradient_boosting": {
+    "n_estimators": 132.0,
+    "learning_rate": 0.09507862091501114,
+    "max_depth": 3.0,
+    "min_samples_split": 8.0,
+    "min_samples_leaf": 10.0,
+    "subsample": 0.9464249979221555,
+    "max_features": null,
+    "best_r2": 0.5557158244292753
+  }
+}

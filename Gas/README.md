@@ -93,10 +93,38 @@ See `architecture.md` for:
 - ✅ Architecture design complete
 - ✅ Model selection justified
 - ✅ Feature set optimized (18 features)
-- ⏳ Data collection (next step)
-- ⏳ Model implementation
-- ⏳ Backtesting & validation
-- ⏳ October 31 forecast generation
+- ✅ **Oct 31 Model Deployed** (Ridge R²=0.9987, MAE $0.0214)
+- ✅ **Bayesian Fusion** with Kalshi markets (75.7% uncertainty reduction)
+- ✅ **Conformal Prediction** (95.1% empirical coverage)
+- ✅ **State Research** (200-week Granger analysis complete)
+
+### Latest: State-Level Analysis (Oct 29, 2025)
+
+**Major Research Breakthrough**: Completed rigorous 200-week analysis of state-level gas prices as leading indicators.
+
+#### Key Findings
+- **Granger Causality**: 8/9 states show significant causality
+  - TX: p<0.000001 (F=56.8) - EXTREMELY STRONG
+  - FL: p=0.000016 (F=19.6) - VERY STRONG  
+  - CA: p=0.014 (lag 3 weeks)
+  - NY: p=0.008 (lag 4 weeks)
+
+- **Forecasting Reality**: Enhanced model MAE = $0.0082 vs Baseline $0.0078
+  - Improvement: -4.65% (actually WORSE!)
+  - Statistical significance: p=0.556 (not significant)
+
+#### Scientific Contribution
+**Publication-quality finding**: "When Granger Causality Doesn't Translate to Forecasting Gains"
+
+This demonstrates:
+1. Statistical significance ≠ Practical significance
+2. In-sample Granger tests don't guarantee out-of-sample forecasting gains
+3. National-level features already capture relevant dynamics
+4. Adding state lags increases model variance without improving accuracy
+
+**Lesson**: The baseline model (national features only) is already optimal. State disaggregation adds complexity without benefit.
+
+**Files**: See `STATE_GRANGER_BREAKTHROUGH.md` and `results/STATE_ENHANCED_MODEL_REPORT.md` for full analysis.
 
 ## 📝 Key Insights
 

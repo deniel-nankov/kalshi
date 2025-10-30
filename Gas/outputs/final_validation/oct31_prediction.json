@@ -1,0 +1,13 @@
+{
+  "prediction_date": "2025-10-29",
+  "target_date": "2025-10-31",
+  "prediction": 3.046194207075992,
+  "lower_95ci": 3.038271711914968,
+  "upper_95ci": 3.0541167022370166,
+  "recent_mae": 0.013156039491030747,
+  "recent_std": 0.0040420893678695625,
+  "training_samples": 1830,
+  "training_r2": 0.999979982631153,
+  "model": "Ridge(alpha=1.0)",
+  "features": 108
+}

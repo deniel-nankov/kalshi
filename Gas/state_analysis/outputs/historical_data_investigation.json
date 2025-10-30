@@ -1,0 +1,37 @@
+{
+  "date": "2025-10-29T20:55:34.076158",
+  "sources_checked": {
+    "EIA": {
+      "available": true,
+      "resolution": "weekly",
+      "coverage": "all states",
+      "cost": "free",
+      "historical_depth": "~2000-present",
+      "recommendation": "HIGHLY RECOMMENDED"
+    },
+    "AAA": {
+      "available": true,
+      "resolution": "5 snapshots only",
+      "coverage": "all states",
+      "cost": "free",
+      "recommendation": "INSUFFICIENT"
+    },
+    "GasBuddy": {
+      "available": "uncertain",
+      "resolution": "possibly daily",
+      "coverage": "unknown",
+      "cost": "free but risky",
+      "recommendation": "RISKY"
+    },
+    "FRED": {
+      "available": true,
+      "resolution": "weekly",
+      "coverage": "national only",
+      "cost": "free",
+      "recommendation": "NOT SUITABLE"
+    }
+  },
+  "recommended_action": "Use EIA weekly data (143+ weeks)",
+  "timeline": "1-2 days to complete analysis",
+  "cost": "Free (API key registration required)"
+}

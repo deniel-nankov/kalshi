@@ -1,0 +1,62 @@
+[
+  {
+    "timestamp": "2025-10-29T20:43:14.559813",
+    "entity": "National",
+    "current": null,
+    "yesterday": null,
+    "week_ago": null,
+    "month_ago": null,
+    "year_ago": null,
+    "success": false
+  },
+  {
+    "timestamp": "2025-10-29T20:43:15.019753",
+    "state": "CA",
+    "current": "4.576",
+    "yesterday": "4.815",
+    "week_ago": "4.995",
+    "month_ago": "5.126",
+    "year_ago": null,
+    "success": true
+  },
+  {
+    "timestamp": "2025-10-29T20:43:16.254823",
+    "state": "TX",
+    "current": "2.602",
+    "yesterday": "3.091",
+    "week_ago": "3.452",
+    "month_ago": "3.205",
+    "year_ago": null,
+    "success": true
+  },
+  {
+    "timestamp": "2025-10-29T20:43:17.620808",
+    "state": "FL",
+    "current": "2.873",
+    "yesterday": "3.332",
+    "week_ago": "3.654",
+    "month_ago": "3.523",
+    "year_ago": null,
+    "success": true
+  },
+  {
+    "timestamp": "2025-10-29T20:43:18.831728",
+    "state": "NY",
+    "current": "3.110",
+    "yesterday": "3.645",
+    "week_ago": "4.019",
+    "month_ago": "3.880",
+    "year_ago": null,
+    "success": true
+  },
+  {
+    "timestamp": "2025-10-29T20:43:20.134031",
+    "state": "IL",
+    "current": "3.233",
+    "yesterday": "3.826",
+    "week_ago": "4.295",
+    "month_ago": "3.747",
+    "year_ago": null,
+    "success": true
+  }
+]

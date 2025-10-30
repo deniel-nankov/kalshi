@@ -1,0 +1,240 @@
+[2025-10-29 20:18:17] ======================================================================
+[2025-10-29 20:18:17] HISTORICAL STATE GAS PRICE COLLECTION
+[2025-10-29 20:18:17] ======================================================================
+[2025-10-29 20:18:17] Collecting: Current, Yesterday, Week Ago, Month Ago, Year Ago
+[2025-10-29 20:18:17] States: 51
+[2025-10-29 20:18:17] Expected records: 51 states × ~4 points = ~204 records
+[2025-10-29 20:18:17] ======================================================================
+[2025-10-29 20:18:17] 
+Estimated dates:
+[2025-10-29 20:18:17]   current: 2025-10-29
+[2025-10-29 20:18:17]   yesterday: 2025-10-28
+[2025-10-29 20:18:17]   week_ago: 2025-10-22
+[2025-10-29 20:18:17]   month_ago: 2025-09-29
+[2025-10-29 20:18:17]   year_ago: 2024-10-29
+[2025-10-29 20:18:17] 
+======================================================================
+[2025-10-29 20:18:17] COLLECTING STATE PRICES
+[2025-10-29 20:18:17] ======================================================================
+[2025-10-29 20:18:17] 
+[1/51] AL (Alabama)
+[2025-10-29 20:18:17]   ✅ AL: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:19] 
+[2/51] AK (Alaska)
+[2025-10-29 20:18:19]   ✅ AK: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:21] 
+[3/51] AZ (Arizona)
+[2025-10-29 20:18:22]   ✅ AZ: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:23] 
+[4/51] AR (Arkansas)
+[2025-10-29 20:18:23]   ✅ AR: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:25] 
+[5/51] CA (California)
+[2025-10-29 20:18:25]   ✅ CA: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:27] 
+[6/51] CO (Colorado)
+[2025-10-29 20:18:27]   ✅ CO: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:29] 
+[7/51] CT (Connecticut)
+[2025-10-29 20:18:29]   ✅ CT: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:30] 
+[8/51] DE (Delaware)
+[2025-10-29 20:18:31]   ✅ DE: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:32] 
+[9/51] FL (Florida)
+[2025-10-29 20:18:33]   ✅ FL: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:34] 
+[10/51] GA (Georgia)
+[2025-10-29 20:18:34]   ✅ GA: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:36] 
+[11/51] HI (Hawaii)
+[2025-10-29 20:18:36]   ✅ HI: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:38] 
+[12/51] ID (Idaho)
+[2025-10-29 20:18:38]   ✅ ID: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:40] 
+[13/51] IL (Illinois)
+[2025-10-29 20:18:40]   ✅ IL: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:42] 
+[14/51] IN (Indiana)
+[2025-10-29 20:18:42]   ✅ IN: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:43] 
+[15/51] IA (Iowa)
+[2025-10-29 20:18:44]   ✅ IA: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:45] 
+[16/51] KS (Kansas)
+[2025-10-29 20:18:46]   ✅ KS: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:47] 
+[17/51] KY (Kentucky)
+[2025-10-29 20:18:48]   ✅ KY: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:49] 
+[18/51] LA (Louisiana)
+[2025-10-29 20:18:49]   ✅ LA: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:51] 
+[19/51] ME (Maine)
+[2025-10-29 20:18:51]   ✅ ME: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:53] 
+[20/51] MD (Maryland)
+[2025-10-29 20:18:53]   ✅ MD: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:55] 
+[21/51] MA (Massachusetts)
+[2025-10-29 20:18:55]   ✅ MA: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:56] 
+[22/51] MI (Michigan)
+[2025-10-29 20:18:57]   ✅ MI: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:18:58] 
+[23/51] MN (Minnesota)
+[2025-10-29 20:18:59]   ✅ MN: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:00] 
+[24/51] MS (Mississippi)
+[2025-10-29 20:19:01]   ✅ MS: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:02] 
+[25/51] MO (Missouri)
+[2025-10-29 20:19:02]   ✅ MO: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:04] 
+[26/51] MT (Montana)
+[2025-10-29 20:19:04]   ✅ MT: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:06] 
+[27/51] NE (Nebraska)
+[2025-10-29 20:19:06]   ✅ NE: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:07] 
+[28/51] NV (Nevada)
+[2025-10-29 20:19:08]   ✅ NV: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:09] 
+[29/51] NH (New Hampshire)
+[2025-10-29 20:19:10]   ✅ NH: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:11] 
+[30/51] NJ (New Jersey)
+[2025-10-29 20:19:11]   ✅ NJ: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:13] 
+[31/51] NM (New Mexico)
+[2025-10-29 20:19:13]   ✅ NM: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:15] 
+[32/51] NY (New York)
+[2025-10-29 20:19:15]   ✅ NY: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:16] 
+[33/51] NC (North Carolina)
+[2025-10-29 20:19:17]   ✅ NC: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:19] 
+[34/51] ND (North Dakota)
+[2025-10-29 20:19:19]   ✅ ND: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:20] 
+[35/51] OH (Ohio)
+[2025-10-29 20:19:21]   ✅ OH: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:22] 
+[36/51] OK (Oklahoma)
+[2025-10-29 20:19:22]   ✅ OK: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:24] 
+[37/51] OR (Oregon)
+[2025-10-29 20:19:24]   ✅ OR: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:26] 
+[38/51] PA (Pennsylvania)
+[2025-10-29 20:19:26]   ✅ PA: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:27] 
+[39/51] RI (Rhode Island)
+[2025-10-29 20:19:28]   ✅ RI: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:29] 
+[40/51] SC (South Carolina)
+[2025-10-29 20:19:30]   ✅ SC: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:31] 
+[41/51] SD (South Dakota)
+[2025-10-29 20:19:31]   ✅ SD: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:33] 
+[42/51] TN (Tennessee)
+[2025-10-29 20:19:33]   ✅ TN: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:35] 
+[43/51] TX (Texas)
+[2025-10-29 20:19:36]   ✅ TX: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:37] 
+[44/51] UT (Utah)
+[2025-10-29 20:19:38]   ✅ UT: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:39] 
+[45/51] VT (Vermont)
+[2025-10-29 20:19:39]   ✅ VT: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:41] 
+[46/51] VA (Virginia)
+[2025-10-29 20:19:41]   ✅ VA: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:43] 
+[47/51] WA (Washington)
+[2025-10-29 20:19:43]   ✅ WA: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:44] 
+[48/51] WV (West Virginia)
+[2025-10-29 20:19:45]   ✅ WV: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:46] 
+[49/51] WI (Wisconsin)
+[2025-10-29 20:19:47]   ✅ WI: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:48] 
+[50/51] WY (Wyoming)
+[2025-10-29 20:19:49]   ✅ WY: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:50] 
+[51/51] DC (District of Columbia)
+[2025-10-29 20:19:50]   ✅ DC: Found 5/5 points: current, yesterday, week_ago, month_ago, year_ago
+[2025-10-29 20:19:50] 
+======================================================================
+[2025-10-29 20:19:50] COLLECTION SUMMARY
+[2025-10-29 20:19:50] ======================================================================
+[2025-10-29 20:19:50] States collected: 51/51
+[2025-10-29 20:19:50] Failed states: 0
+[2025-10-29 20:19:50] Total records: 255
+[2025-10-29 20:19:50] Records per state (avg): 5.0
+[2025-10-29 20:19:50] 
+======================================================================
+[2025-10-29 20:19:50] NATIONAL AVERAGES (VOLUME-WEIGHTED)
+[2025-10-29 20:19:50] ======================================================================
+[2025-10-29 20:19:50] current     : $3.132 (weighted), $3.049 (simple), n=51
+[2025-10-29 20:19:50] yesterday   : $3.136 (weighted), $3.051 (simple), n=51
+[2025-10-29 20:19:50] week_ago    : $3.161 (weighted), $3.071 (simple), n=51
+[2025-10-29 20:19:50] month_ago   : $3.225 (weighted), $3.142 (simple), n=51
+[2025-10-29 20:19:50] year_ago    : $3.217 (weighted), $3.135 (simple), n=51
+[2025-10-29 20:19:50] 
+======================================================================
+[2025-10-29 20:19:50] PRICE RANGES BY TIME PERIOD
+[2025-10-29 20:19:50] ======================================================================
+[2025-10-29 20:19:50] 
+CURRENT:
+[2025-10-29 20:19:50]   Range: $2.597 - $4.576
+[2025-10-29 20:19:50]   Spread: $1.979
+[2025-10-29 20:19:50]   Std Dev: $0.461
+[2025-10-29 20:19:50]   Highest: CA $4.576, HI $4.480, WA $4.319, OR $3.922, AK $3.832
+[2025-10-29 20:19:50]   Lowest: OK $2.597, MS $2.599, TX $2.602, LA $2.625, AR $2.630
+[2025-10-29 20:19:50] 
+WEEK_AGO:
+[2025-10-29 20:19:50]   Range: $2.594 - $4.613
+[2025-10-29 20:19:50]   Spread: $2.019
+[2025-10-29 20:19:50]   Std Dev: $0.471
+[2025-10-29 20:19:51]   Highest: CA $4.613, HI $4.489, WA $4.388, OR $3.995, AK $3.854
+[2025-10-29 20:19:51]   Lowest: TX $2.594, MS $2.616, OK $2.624, LA $2.635, AR $2.647
+[2025-10-29 20:19:51] 
+MONTH_AGO:
+[2025-10-29 20:19:51]   Range: $2.599 - $4.656
+[2025-10-29 20:19:51]   Spread: $2.057
+[2025-10-29 20:19:51]   Std Dev: $0.477
+[2025-10-29 20:19:51]   Highest: CA $4.656, WA $4.559, HI $4.476, OR $4.193, NV $3.906
+[2025-10-29 20:19:51]   Lowest: OK $2.599, MS $2.675, TX $2.700, LA $2.709, TN $2.733
+[2025-10-29 20:19:51] 
+✅ Saved 255 records to: /Users/denielnankov/Documents/kalshi/Gas/state_analysis/data/historical_state_snapshot.csv
+[2025-10-29 20:19:51] ✅ Updated main historical file: /Users/denielnankov/Documents/kalshi/Gas/state_analysis/data/historical_state_prices.csv
+[2025-10-29 20:19:51]    Total unique records: 255
+[2025-10-29 20:19:51] 
+======================================================================
+[2025-10-29 20:19:51] DATASET SUMMARY
+[2025-10-29 20:19:51] ======================================================================
+[2025-10-29 20:19:51] Unique dates: 5
+[2025-10-29 20:19:51] Unique states: 51
+[2025-10-29 20:19:51] Date range: 2024-10-29 to 2025-10-29
+[2025-10-29 20:19:51] Average records per date: 51.0
+[2025-10-29 20:19:51] 
+✅ SUCCESS! We have ~30 days of coverage (4 time points)
+[2025-10-29 20:19:51]    Ready for:
+[2025-10-29 20:19:51]    • Correlation analysis (states vs national)
+[2025-10-29 20:19:51]    • Price change analysis (week-over-week, month-over-month)
+[2025-10-29 20:19:51]    • Regional trend identification
+[2025-10-29 20:19:51] 
+⚠️  NOTE: For Granger causality (leading indicators), we need:
+[2025-10-29 20:19:51]    • Daily data (not just 4 snapshots)
+[2025-10-29 20:19:51]    • Minimum 30 consecutive days
+[2025-10-29 20:19:51]    • Continue daily collection for full analysis
+[2025-10-29 20:19:51] 
+======================================================================
+[2025-10-29 20:19:51] COLLECTION COMPLETE!
+[2025-10-29 20:19:51] ======================================================================

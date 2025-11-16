@@ -290,8 +290,9 @@ if len(eia_only) > 0:
     print(f"   Mean Percentage Error: {eia_only['pct_error'].mean():.2f}%")
     
     print(f"\n   Details:")
-    for _, row in eia_only.iterrows():
-        print(f"      {row['date']}: Pred ${row['prediction']:.3f}, Actual ${row['actual']:.3f}, Error ${row['error']:+.3f}")
+    # Use itertuples() for better performance (5-10x faster than iterrows)
+    for row in eia_only.itertuples(index=False):
+        print(f"      {row.date}: Pred ${row.prediction:.3f}, Actual ${row.actual:.3f}, Error ${row.error:+.3f}")
 
 print(f"\n{'=' * 80}")
 print("✅ INCREMENTAL TRAINING COMPLETE")

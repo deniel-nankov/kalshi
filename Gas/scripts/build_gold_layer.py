@@ -196,7 +196,7 @@ def build_gold_dataset() -> pd.DataFrame:
                     gold[col] = gold[col].fillna(0.0)
                 # Lagged/cumulative features: forward fill then backfill
                 elif col in ["days_since_last_hurricane", "padd3_threat_14d_max", "refining_capacity_threatened_30d_cumsum"]:
-                    gold[col] = gold[col].fillna(method='ffill').fillna(730)  # 2 years max
+                    gold[col] = gold[col].ffill().fillna(730)  # 2 years max
                 # Geographic/threat features: fill with None equivalent
                 else:
                     gold[col] = gold[col].fillna(0.0)
@@ -235,7 +235,7 @@ def build_gold_dataset() -> pd.DataFrame:
         
         for col in external_cols:
             if col in gold.columns:
-                gold[col] = gold[col].fillna(method='ffill').fillna(method='bfill')
+                gold[col] = gold[col].ffill().bfill()
         
         print(f"✓ Merged Phase 2 external features: {len([c for c in external_cols if c in gold.columns])} columns")
 

@@ -142,8 +142,9 @@ def validate_predictions():
         return 0
     
     print(f"\n🔍 Found {len(pending)} pending predictions:")
-    for _, row in pending.iterrows():
-        print(f"   {row['target_date'].date()}: Predicted ${row['predicted_price']:.3f}")
+    # Use itertuples() for better performance (5-10x faster than iterrows)
+    for row in pending.itertuples(index=False):
+        print(f"   {row.target_date.date()}: Predicted ${row.predicted_price:.3f}")
     
     # Fetch actual prices for pending predictions
     start_date = pending['target_date'].min()
@@ -158,8 +159,10 @@ def validate_predictions():
     # Match predictions with actuals
     validated_count = 0
     
-    for idx, row in pending.iterrows():
-        target_date = pd.to_datetime(row['target_date']).date()
+    # Use itertuples() with index=True to get both index and row data
+    for row in pending.itertuples():
+        idx = row.Index
+        target_date = pd.to_datetime(row.target_date).date()
         
         # Find matching actual price
         actual = actual_prices[actual_prices['date'].dt.date == target_date]
@@ -171,8 +174,8 @@ def validate_predictions():
         actual_price = actual.iloc[0]['retail_price']
         
         # Calculate errors
-        ridge_error = row['predicted_price'] - actual_price
-        baseline_error = row['baseline_prediction'] - actual_price
+        ridge_error = row.predicted_price - actual_price
+        baseline_error = row.baseline_prediction - actual_price
         
         # Update tracking
         tracking.loc[idx, 'actual_price'] = actual_price

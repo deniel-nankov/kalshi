@@ -282,8 +282,9 @@ def generate_recommendations(consensus_df, target_features=45):
     
     print(f"\n❌ Features to Remove ({len(removed_features)}):")
     removed_df = consensus_df[consensus_df['feature'].isin(removed_features)].sort_values('final_rank')
-    for _, row in removed_df.iterrows():
-        print(f"  {row['final_rank']:2d}. {row['feature']}")
+    # Use itertuples() for better performance (5-10x faster than iterrows)
+    for row in removed_df.itertuples(index=False):
+        print(f"  {row.final_rank:2d}. {row.feature}")
     
     return top_features
 

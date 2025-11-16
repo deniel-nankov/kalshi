@@ -76,9 +76,9 @@ ax1.plot(df['date'], df['abs_error'] * 1000, 'o-', color='#E63946',
 ax1.axhline(y=10, color='green', linestyle='--', alpha=0.5, label='$0.01 threshold (excellent)')
 ax1.axhline(y=50, color='orange', linestyle='--', alpha=0.5, label='$0.05 threshold (good)')
 
-# Highlight EIA actual days
-for _, row in eia_actual.iterrows():
-    ax1.plot(row['date'], row['abs_error'] * 1000, 'D', 
+# Highlight EIA actual days using vectorized operations (faster than loop)
+if len(eia_actual) > 0:
+    ax1.plot(eia_actual['date'], eia_actual['abs_error'] * 1000, 'D', 
             color='#A23B72', markersize=12, markeredgewidth=2, 
             markeredgecolor='white', zorder=5)
 
@@ -92,9 +92,9 @@ ax1.set_ylim(0, 45)
 ax2.plot(df['date'], df['pct_error'], 'o-', color='#457B9D', 
          linewidth=2, markersize=8, label='Percentage Error')
 
-# Highlight EIA actual days
-for _, row in eia_actual.iterrows():
-    ax2.plot(row['date'], row['pct_error'], 'D', 
+# Highlight EIA actual days using vectorized operations (faster than loop)
+if len(eia_actual) > 0:
+    ax2.plot(eia_actual['date'], eia_actual['pct_error'], 'D', 
             color='#A23B72', markersize=12, markeredgewidth=2, 
             markeredgecolor='white', zorder=5)
 

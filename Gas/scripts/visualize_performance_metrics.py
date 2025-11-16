@@ -104,13 +104,14 @@ def create_model_performance_dashboard(output_path: Path):
     ax4 = fig.add_subplot(gs[1, 2])
     ax4.axis('off')
     
+    # Use itertuples() for better performance (5-10x faster than iterrows)
     table_data = []
-    for _, row in df.iterrows():
+    for row in df.itertuples(index=False):
         table_data.append([
-            row['model'],
-            f"{row['test_rmse']:.4f}",
-            f"{row['test_r2']:.3f}",
-            f"{row['test_mape_pct']:.2f}%"
+            row.model,
+            f"{row.test_rmse:.4f}",
+            f"{row.test_r2:.3f}",
+            f"{row.test_mape_pct:.2f}%"
         ])
     
     table = ax4.table(cellText=table_data,

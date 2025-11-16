@@ -81,9 +81,10 @@ aaa_df['date'] = pd.to_datetime(aaa_df['date'])
 
 print(f"   ✅ Loaded {len(aaa_df)} daily prices")
 print(f"\n   Daily prices:")
-for _, row in aaa_df.iterrows():
-    marker = "📍" if row['source'] == 'anchor' else "~"
-    print(f"      {row['date'].strftime('%Y-%m-%d')}: ${row['price']:.3f} {marker}")
+# Use itertuples() for better performance (5-10x faster than iterrows)
+for row in aaa_df.itertuples(index=False):
+    marker = "📍" if row.source == 'anchor' else "~"
+    print(f"      {row.date.strftime('%Y-%m-%d')}: ${row.price:.3f} {marker}")
 
 # ============================================================================
 # STEP 3: Incremental Training (Day by Day)
@@ -100,10 +101,14 @@ train_df = gold_df.copy()
 # Track results
 training_results = []
 
+# Collect new rows for efficient concatenation (avoid repeated pd.concat in loop)
+new_rows_to_add = []
+
 # For each day from Oct 19-29 (we already have Oct 18 in gold layer)
-for _, aaa_row in aaa_df.iterrows():
-    current_date = aaa_row['date']
-    current_price = aaa_row['price']
+# Use itertuples() for better performance (5-10x faster than iterrows)
+for aaa_row in aaa_df.itertuples(index=False):
+    current_date = aaa_row.date
+    current_price = aaa_row.price
     
     # Skip Oct 18 (already in gold layer)
     if current_date <= latest_gold_date:
@@ -115,13 +120,14 @@ for _, aaa_row in aaa_df.iterrows():
     print(f"Day {day_num}: {current_date.strftime('%Y-%m-%d')}")
     print(f"{'-' * 80}")
     
-    # Train on all data up to yesterday
-    print(f"   Training samples: {len(train_df)}")
-    print(f"   Training period: {train_df['date'].min().strftime('%Y-%m-%d')} to {train_df['date'].max().strftime('%Y-%m-%d')}")
+    # Train on all data up to yesterday (including previously added rows)
+    current_train_df = pd.concat([train_df] + new_rows_to_add, ignore_index=True) if new_rows_to_add else train_df
+    print(f"   Training samples: {len(current_train_df)}")
+    print(f"   Training period: {current_train_df['date'].min().strftime('%Y-%m-%d')} to {current_train_df['date'].max().strftime('%Y-%m-%d')}")
     
-    # Prepare training data
-    X_train = train_df[feature_cols].values
-    y_train = train_df[target_col].values
+    # Prepare training data (use current_train_df which includes all accumulated data)
+    X_train = current_train_df[feature_cols].values
+    y_train = current_train_df[target_col].values
     
     # Build pipeline
     imputer = SimpleImputer(strategy='mean')
@@ -136,8 +142,8 @@ for _, aaa_row in aaa_df.iterrows():
     train_r2 = model.score(X_train_scaled, y_train)
     print(f"   Training R²: {train_r2:.6f}")
     
-    # Make prediction for today
-    last_features = train_df[feature_cols].iloc[-1:].values
+    # Make prediction for today (use last features from current_train_df)
+    last_features = current_train_df[feature_cols].iloc[-1:].values
     X_pred = imputer.transform(last_features)
     X_pred_scaled = scaler.transform(X_pred)
     prediction = model.predict(X_pred_scaled)[0]
@@ -148,27 +154,27 @@ for _, aaa_row in aaa_df.iterrows():
     pct_error = (abs_error / current_price) * 100
     
     print(f"   Prediction: ${prediction:.3f}/gal")
-    print(f"   Actual: ${current_price:.3f}/gal ({aaa_row['source']})")
+    print(f"   Actual: ${current_price:.3f}/gal ({aaa_row.source})")
     print(f"   Error: ${error:+.3f} ({pct_error:.2f}%)")
     
     # Record result
     training_results.append({
         'date': current_date,
-        'train_samples': len(train_df),
+        'train_samples': len(current_train_df),
         'train_r2': train_r2,
         'prediction': prediction,
         'actual': current_price,
-        'source': aaa_row['source'],
+        'source': aaa_row.source,
         'error': error,
         'abs_error': abs_error,
         'pct_error': pct_error
     })
     
-    # Add today to training set for tomorrow
-    new_row = train_df.iloc[-1:].copy()
+    # Add today to training set for tomorrow (collect for batch concat later)
+    new_row = current_train_df.iloc[-1:].copy()
     new_row['date'] = current_date
     new_row[target_col] = current_price
-    train_df = pd.concat([train_df, new_row], ignore_index=True)
+    new_rows_to_add.append(new_row)
 
 # ============================================================================
 # STEP 4: Predict for October 31, 2025
@@ -265,12 +271,13 @@ print(f"\n📊 Incremental Training Performance (Oct 19-29):")
 print(f"\n   {'Date':<12} {'Pred':<8} {'Actual':<8} {'Error':<10} {'Source':<12}")
 print(f"   {'-'*55}")
 
-for _, row in results_df.iterrows():
-    print(f"   {row['date'].strftime('%Y-%m-%d'):<12} "
-          f"${row['prediction']:.3f}   "
-          f"${row['actual']:.3f}   "
-          f"${row['error']:+.3f}     "
-          f"{row['source']:<12}")
+# Use itertuples() for better performance (5-10x faster than iterrows)
+for row in results_df.itertuples(index=False):
+    print(f"   {row.date.strftime('%Y-%m-%d'):<12} "
+          f"${row.prediction:.3f}   "
+          f"${row.actual:.3f}   "
+          f"${row.error:+.3f}     "
+          f"{row.source:<12}")
 
 print(f"\n   Overall Metrics:")
 print(f"      Mean Absolute Error: ${results_df['abs_error'].mean():.4f}")

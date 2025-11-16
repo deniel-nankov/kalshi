@@ -233,12 +233,13 @@ if len(df) >= 5:
     print(f"\n   Last 5 days:")
     print(f"\n   {'Date':<12} {'AAA':<8} {'EIA':<8} {'RBOB':<8} {'Best':<8}")
     print(f"   {'-'*50}")
-    for _, row in df.tail(5).iterrows():
-        aaa = f"${row['aaa_price']:.3f}" if pd.notna(row['aaa_price']) else "—"
-        eia = f"${row['eia_price']:.3f}" if pd.notna(row['eia_price']) else "—"
-        rbob = f"${row['rbob_retail_est']:.3f}" if pd.notna(row['rbob_retail_est']) else "—"
-        best = f"${row['best_estimate']:.3f}" if pd.notna(row['best_estimate']) else "—"
-        print(f"   {row['date']!s:<12} {aaa:<8} {eia:<8} {rbob:<8} {best:<8}")
+    # Use itertuples() for better performance (5-10x faster than iterrows)
+    for row in df.tail(5).itertuples(index=False):
+        aaa = f"${row.aaa_price:.3f}" if pd.notna(row.aaa_price) else "—"
+        eia = f"${row.eia_price:.3f}" if pd.notna(row.eia_price) else "—"
+        rbob = f"${row.rbob_retail_est:.3f}" if pd.notna(row.rbob_retail_est) else "—"
+        best = f"${row.best_estimate:.3f}" if pd.notna(row.best_estimate) else "—"
+        print(f"   {row.date!s:<12} {aaa:<8} {eia:<8} {rbob:<8} {best:<8}")
 
 # ============================================================================
 # 6. Recommendations

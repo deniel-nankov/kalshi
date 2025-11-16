@@ -236,9 +236,9 @@ bars1 = ax4.bar(x - width/2, df['prediction'], width, label='Prediction',
 bars2 = ax4.bar(x + width/2, df['actual'], width, label='Actual', 
                color='#A23B72', alpha=0.8)
 
-# Highlight EIA actual days
-for idx, row in df.iterrows():
-    if row['is_eia_actual']:
+# Highlight EIA actual days using enumerate (more efficient than iterrows with index)
+for idx, is_eia in enumerate(df['is_eia_actual']):
+    if is_eia:
         bars2[idx].set_edgecolor('gold')
         bars2[idx].set_linewidth(3)
 

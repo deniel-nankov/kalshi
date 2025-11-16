@@ -123,11 +123,12 @@ def generate_predictions(model, test_df, X_test, y_test, horizon):
     print(f"{'Date':<12} {'Actual':<10} {'Predicted':<10} {'Error':<10} {'Status'}")
     print("-" * 70)
     
-    for _, row in results.iterrows():
-        target_date = row['target_date'].date()
-        actual = f"${row['actual_price']:.4f}"
-        predicted = f"${row['predicted_price']:.4f}"
-        error = f"${row['error']:.4f}"
+    # Use itertuples() for better performance (5-10x faster than iterrows)
+    for row in results.itertuples(index=False):
+        target_date = row.target_date.date()
+        actual = f"${row.actual_price:.4f}"
+        predicted = f"${row.predicted_price:.4f}"
+        error = f"${row.error:.4f}"
         
         # Check if this is a future date
         if target_date > today:
@@ -148,10 +149,11 @@ def generate_predictions(model, test_df, X_test, y_test, horizon):
         print(f"🔮 ACTIONABLE FORECASTS (Future dates only):")
         print(f"{'='*80}")
         
-        for _, row in future_preds.iterrows():
-            target_date = row['target_date'].date()
+        # Use itertuples() for better performance (5-10x faster than iterrows)
+        for row in future_preds.itertuples(index=False):
+            target_date = row.target_date.date()
             days_ahead = (target_date - today).days
-            predicted = row['predicted_price']
+            predicted = row.predicted_price
             
             print(f"\n📅 {target_date} ({days_ahead} day{'s' if days_ahead > 1 else ''} from today):")
             print(f"   Predicted price: ${predicted:.4f}")

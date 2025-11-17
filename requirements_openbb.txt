@@ -1,0 +1,40 @@
+# OpenBB Platform Integration Requirements
+# ==========================================
+# Professional-grade gas price forecasting with OpenBB Platform
+# 
+# Installation:
+#   pip install -r requirements_openbb.txt
+
+# Core OpenBB Platform
+openbb==4.5.0
+openbb-core==1.5.5
+
+# OpenBB Data Providers
+openbb-yfinance==1.5.0
+openbb-fred==1.5.0
+openbb-us-eia==1.2.0
+openbb-benzinga==1.5.0
+openbb-polygon==1.5.0
+openbb-alpha-vantage==1.5.0
+openbb-intrinio==1.5.0
+
+# OpenBB Asset Classes
+openbb-commodity==1.4.0
+openbb-economy==1.5.0
+openbb-equity==1.5.0
+openbb-fixedincome==1.5.0
+openbb-news==1.5.0
+
+# Data Processing
+pandas==2.3.3
+numpy==2.3.5
+pyarrow>=18.0.0  # For parquet support
+
+# Testing
+pytest>=9.0.0
+pytest-cov>=4.1.0
+
+# Existing project requirements
+scikit-learn>=1.3.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
